@@ -21,7 +21,7 @@ const portWS = ":8082"
 const bufferSize = 4 * 1000 * 1024 // 4MB
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
+	ReadBufferSize:  bufferSize,
 	WriteBufferSize: bufferSize,
 	CheckOrigin: func(r *http.Request) bool {
 		return true
