@@ -95,6 +95,19 @@ func waitForWebSockets() {
 	http.ListenAndServe(portWS, serverWS)
 }
 
+func relayWS(conn *websocket.Conn) {
+	for {
+		select {
+		case data := <-stream:
+			if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
+				log.Println(err.Error())
+			}
+		case <-done:
+			conn.Close()
+		}
+	}
+}
+
 func workerThread() {
 	var recording *os.File
 	if recordToFile {
@@ -109,11 +122,11 @@ func workerThread() {
 	for {
 		select {
 		case data := <-stream:
-			if recordToFile && recording != nil {
-				recording.Write(data)
+			if recordToFile {
+				go writeToFile(data, recording)
 			}
-			for _, con := range connectedWSClients {
-				if err := con.WriteMessage(websocket.BinaryMessage, data); err != nil {
+			for _, conn := range connectedWSClients {
+				if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 					log.Println(err.Error())
 				}
 			}
@@ -122,5 +135,11 @@ func workerThread() {
 				c.Close()
 			}
 		}
+	}
+}
+
+func writeToFile(data []byte, file *os.File) {
+	if file != nil {
+		file.Write(data)
 	}
 }
