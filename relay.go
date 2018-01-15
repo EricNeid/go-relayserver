@@ -11,17 +11,17 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const recordToFile = true
+const recordToFile = false
 
 var recordName = fmt.Sprintf("%s_record.mpeg", time.Now().Format("20060102_1504"))
 
 const portStream = ":8081"
 const portWS = ":8082"
 
-const bufferSize = 80 * 1024 // 8 MB
+const bufferSize = 4 * 1000 * 1024 // 4MB
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  bufferSize,
+	ReadBufferSize:  1024,
 	WriteBufferSize: bufferSize,
 	CheckOrigin: func(r *http.Request) bool {
 		return true
@@ -93,19 +93,6 @@ func waitForWebSockets() {
 		connectedWSClients = append(connectedWSClients, ws)
 	})
 	http.ListenAndServe(portWS, serverWS)
-}
-
-func relayWS(conn *websocket.Conn) {
-	for {
-		select {
-		case data := <-stream:
-			if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
-				log.Println(err.Error())
-			}
-		case <-done:
-			conn.Close()
-		}
-	}
 }
 
 func workerThread() {
