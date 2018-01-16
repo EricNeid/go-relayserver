@@ -51,9 +51,10 @@ func main() {
 		f, err := os.Create(recordName)
 		if err != nil {
 			log.Println(err.Error())
+		} else {
+			defer f.Close()
+			recording = f
 		}
-		defer f.Close()
-		recording = f
 	}
 
 	go consumeStream(stream, done, recording)
@@ -136,6 +137,8 @@ func waitForWS(port string) {
 	http.ListenAndServe(port, connectWs)
 }
 
+// monitorWS waits for the websocket to disconnect.
+// It closes the connection and removes the ws from the connected pool.
 func monitorWS(conn *websocket.Conn) {
 	for {
 		if _, _, err := conn.NextReader(); err != nil {
@@ -147,11 +150,20 @@ func monitorWS(conn *websocket.Conn) {
 	}
 }
 
+// consumeStream reads from stream channel and writes the []byte to each connected websocket.
+// If done is set, it closes all connections.
+// If given file for recording is not null, the stream is also written to the file.
 func consumeStream(stream <-chan []byte, done <-chan bool, recording *os.File) {
 	for {
 		select {
 		case data := <-stream:
 			if recording != nil {
+				// decouple file writing in
+				writeToFile := func(data []byte, file *os.File) {
+					if file != nil {
+						file.Write(data)
+					}
+				}
 				go writeToFile(data, recording)
 			}
 			for conn := range wsClients {
@@ -165,11 +177,5 @@ func consumeStream(stream <-chan []byte, done <-chan bool, recording *os.File) {
 				delete(wsClients, conn)
 			}
 		}
-	}
-}
-
-func writeToFile(data []byte, file *os.File) {
-	if file != nil {
-		file.Write(data)
 	}
 }
