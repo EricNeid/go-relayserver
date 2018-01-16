@@ -13,13 +13,11 @@ import (
 
 const recordToFile = false
 
-var recordName = fmt.Sprintf("%s_record.mpeg", time.Now().Format("20060102_1504"))
-
 const portStream = ":8081"
 const portWS = ":8082"
-
 const bufferSize = 4 * 1000 * 1024 // 4MB
 
+var wsClients = make(map[*websocket.Conn]bool)
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  bufferSize,
 	WriteBufferSize: bufferSize,
@@ -27,16 +25,24 @@ var upgrader = websocket.Upgrader{
 		return true
 	},
 }
-
-var connectedWSClients []*websocket.Conn
-
-var stream = make(chan []byte)
-var done = make(chan bool)
+var recordName = fmt.Sprintf("%s_record.mpeg", time.Now().Format("20060102_1504"))
 
 func main() {
-	go waitForWebSockets()
-	go waitForStream()
-	go workerThread()
+	stream := make(chan []byte)
+	done := make(chan bool)
+
+	var recording *os.File
+	if recordToFile {
+		f, err := os.Create(recordName)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		defer f.Close()
+		recording = f
+	}
+
+	go waitForStream(portStream, stream)
+	go consumeStream(stream, done, recording)
 
 	fmt.Println("Relay started, hit Enter-key to close")
 
@@ -46,16 +52,17 @@ func main() {
 	fmt.Println("Shuting down...")
 }
 
-func waitForStream() {
+func waitForStream(port string, stream chan<- []byte) {
 	log.Println("Listening for incoming stream on " + portStream)
 
-	serverVideoStream := http.NewServeMux()
-	serverVideoStream.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	streamReader := http.NewServeMux()
+	streamReader.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Received stream connection from: " + r.RemoteAddr)
 
 		input := r.Body
 		defer input.Close()
 
+		// read from input intil EOF
 		buffer := make([]byte, bufferSize)
 		for {
 			n, err := input.Read(buffer[:cap(buffer)])
@@ -73,14 +80,14 @@ func waitForStream() {
 		}
 		log.Println("Stream closed")
 	})
-	http.ListenAndServe(portStream, serverVideoStream)
+	http.ListenAndServe(port, streamReader)
 }
 
-func waitForWebSockets() {
-	log.Println("Listening for incoming ws on " + portWS)
+func waitForWS(port string) {
+	log.Println("Listening for incoming ws on " + port)
 
-	serverWS := http.NewServeMux()
-	serverWS.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	connectWs := http.NewServeMux()
+	connectWs.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Received ws connection from: " + r.RemoteAddr)
 
 		ws, err := upgrader.Upgrade(w, r, nil)
@@ -88,38 +95,42 @@ func waitForWebSockets() {
 			log.Println(err)
 			return
 		}
-		log.Println("Client subscribed: " + r.RemoteAddr)
+		log.Println("Client connected: " + ws.RemoteAddr().String())
 
-		connectedWSClients = append(connectedWSClients, ws)
+		wsClients[ws] = true
+		go monitorWS(ws)
 	})
-	http.ListenAndServe(portWS, serverWS)
+	http.ListenAndServe(port, connectWs)
 }
 
-func workerThread() {
-	var recording *os.File
-	if recordToFile {
-		f, err := os.Create(recordName)
-		if err != nil {
-			log.Println(err.Error())
+func monitorWS(conn *websocket.Conn) {
+	for {
+		if _, _, err := conn.NextReader(); err != nil {
+			delete(wsClients, conn)
+			conn.Close()
+			log.Println("Client disconnected: " + conn.RemoteAddr().String())
+			break
 		}
-		defer f.Close()
-		recording = f
 	}
+}
 
+func consumeStream(stream <-chan []byte, done <-chan bool, recording *os.File) {
 	for {
 		select {
 		case data := <-stream:
-			if recordToFile {
+			if recording != nil {
 				go writeToFile(data, recording)
 			}
-			for _, conn := range connectedWSClients {
+
+			for conn := range wsClients {
 				if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 					log.Println(err.Error())
 				}
 			}
 		case <-done:
-			for _, c := range connectedWSClients {
-				c.Close()
+			for conn := range wsClients {
+				conn.Close()
+				delete(wsClients, conn)
 			}
 		}
 	}
