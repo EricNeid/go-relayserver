@@ -16,7 +16,7 @@ const recordToFile = false
 
 const defaultPortStream = ":8081"
 const defaultPortWS = ":8082"
-const bufferSize = 4 * 1000 * 1024 // 4MB
+const bufferSize = 16 * 1000 * 1024 // 16MB
 
 var wsClients = make(map[*websocket.Conn]bool)
 var upgrader = websocket.Upgrader{
