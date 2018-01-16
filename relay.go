@@ -43,7 +43,6 @@ func main() {
 		return
 	}
 
-	stream := make(chan *[]byte)
 	done := make(chan bool)
 
 	var recording *os.File
@@ -57,8 +56,8 @@ func main() {
 		}
 	}
 
+	stream := waitForStream(input.portStream, input.secretStream)
 	go consumeStream(stream, done, recording)
-	go waitForStream(input.portStream, input.secretStream, stream)
 	go waitForWS(input.portWS)
 
 	fmt.Println("Relay started, hit Enter-key to close")
@@ -86,35 +85,39 @@ func readCmdArguments() input {
 	}
 }
 
-func waitForStream(port string, secret string, stream chan<- *[]byte) {
+func waitForStream(port string, secret string) <-chan *[]byte {
 	log.Println("Listening for incoming stream on " + port)
 
-	streamReader := http.NewServeMux()
-	streamReader.HandleFunc("/"+secret, func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Received stream connection from: " + r.RemoteAddr)
+	stream := make(chan *[]byte)
+	go func() {
+		streamReader := http.NewServeMux()
+		streamReader.HandleFunc("/"+secret, func(w http.ResponseWriter, r *http.Request) {
+			log.Println("Received stream connection from: " + r.RemoteAddr)
 
-		input := r.Body
-		defer input.Close()
+			input := r.Body
+			defer input.Close()
 
-		// read from input until EOF
-		buffer := make([]byte, bufferSize)
-		for {
-			n, err := input.Read(buffer[:cap(buffer)])
-			if n == 0 {
-				if err == nil {
-					continue
+			// read from input until EOF
+			buffer := make([]byte, bufferSize)
+			for {
+				n, err := input.Read(buffer[:cap(buffer)])
+				if n == 0 {
+					if err == nil {
+						continue
+					}
+					if err == io.EOF {
+						break
+					}
+					fmt.Println(err.Error())
 				}
-				if err == io.EOF {
-					break
-				}
-				fmt.Println(err.Error())
+				chunk := buffer[:n]
+				stream <- &chunk
 			}
-			chunk := buffer[:n]
-			stream <- &chunk
-		}
-		log.Println("Stream closed")
-	})
-	http.ListenAndServe(port, streamReader)
+			log.Println("Stream closed")
+		})
+		http.ListenAndServe(port, streamReader)
+	}()
+	return stream
 }
 
 func waitForWS(port string) {
