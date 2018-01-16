@@ -96,7 +96,7 @@ func waitForStream(port string, secret string, stream chan<- []byte) {
 		input := r.Body
 		defer input.Close()
 
-		// read from input intil EOF
+		// read from input until EOF
 		buffer := make([]byte, bufferSize)
 		for {
 			n, err := input.Read(buffer[:cap(buffer)])
