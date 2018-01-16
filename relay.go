@@ -16,7 +16,7 @@ const recordToFile = false
 
 const defaultPortStream = ":8081"
 const defaultPortWS = ":8082"
-const bufferSize = 16 * 1000 * 1024 // 16MB
+const bufferSize = 8 * 1000 * 1024 // 8MB
 
 var wsClients = make(map[*websocket.Conn]bool)
 var upgrader = websocket.Upgrader{
@@ -43,7 +43,7 @@ func main() {
 		return
 	}
 
-	stream := make(chan []byte)
+	stream := make(chan *[]byte)
 	done := make(chan bool)
 
 	var recording *os.File
@@ -86,7 +86,7 @@ func readCmdArguments() input {
 	}
 }
 
-func waitForStream(port string, secret string, stream chan<- []byte) {
+func waitForStream(port string, secret string, stream chan<- *[]byte) {
 	log.Println("Listening for incoming stream on " + port)
 
 	streamReader := http.NewServeMux()
@@ -110,7 +110,7 @@ func waitForStream(port string, secret string, stream chan<- []byte) {
 				fmt.Println(err.Error())
 			}
 			chunk := buffer[:n]
-			stream <- chunk
+			stream <- &chunk
 		}
 		log.Println("Stream closed")
 	})
@@ -153,21 +153,21 @@ func monitorWS(conn *websocket.Conn) {
 // consumeStream reads from stream channel and writes the []byte to each connected websocket.
 // If done is set, it closes all connections.
 // If given file for recording is not null, the stream is also written to the file.
-func consumeStream(stream <-chan []byte, done <-chan bool, recording *os.File) {
+func consumeStream(stream <-chan *[]byte, done <-chan bool, recording *os.File) {
 	for {
 		select {
 		case data := <-stream:
 			if recording != nil {
 				// decouple file writing in
-				writeToFile := func(data []byte, file *os.File) {
+				writeToFile := func(data *[]byte, file *os.File) {
 					if file != nil {
-						file.Write(data)
+						file.Write(*data)
 					}
 				}
 				go writeToFile(data, recording)
 			}
 			for conn := range wsClients {
-				if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
+				if err := conn.WriteMessage(websocket.BinaryMessage, *data); err != nil {
 					log.Println(err.Error())
 				}
 			}
