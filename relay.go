@@ -41,8 +41,9 @@ func main() {
 		recording = f
 	}
 
-	go waitForStream(portStream, stream)
 	go consumeStream(stream, done, recording)
+	go waitForStream(portStream, stream)
+	go waitForWS(portWS)
 
 	fmt.Println("Relay started, hit Enter-key to close")
 
