@@ -8,7 +8,7 @@ import (
 )
 
 type wsClient struct {
-	writeStream chan<- []*byte
+	writeStream chan<- *[]byte
 	isClosed    <-chan bool
 }
 
@@ -46,18 +46,31 @@ func waitForWSClients(port string) <-chan *wsClient {
 	return connectedClients
 }
 
-func writeToConnection(conn *websocket.Conn) chan<- []*byte {
-	inputStream := make(chan []*byte)
-
-	// TODO start goroutine to write to connection
-
+func writeToConnection(conn *websocket.Conn) chan<- *[]byte {
+	inputStream := make(chan *[]byte)
+	go func() {
+		for {
+			data := <-inputStream
+			if err := conn.WriteMessage(websocket.BinaryMessage, *data); err != nil {
+				log.Println(err.Error())
+			}
+		}
+	}()
 	return inputStream
 }
 
+// monitorConnection waits for the websocket to disconnect.
+// It closes the connection and send a signal on the channel.
 func monitorConnection(conn *websocket.Conn) <-chan bool {
 	isClosed := make(chan bool)
-
-	// TODO start goroutine to read from connection
-
+	go func() {
+		for {
+			if _, _, err := conn.ReadMessage(); err != nil {
+				isClosed <- true
+				conn.Close()
+				break
+			}
+		}
+	}()
 	return isClosed
 }
