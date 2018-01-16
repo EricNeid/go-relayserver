@@ -1,6 +1,6 @@
 # go-relayserver
 
-This Repo contains a simple websocket relay server, written in go. The server relays incoming stream to multiple connected websockets-
+A simple websocket relay server, written in go. It relays incoming stream to multiple connected websockets.
 
 ## Install
 
