@@ -8,12 +8,8 @@ This Repo contains a simple websocket relay server, written in go. The server re
  $ go get github.com/CombatMage/go-relayserver
 ```
 
-## Documentation
+## Usage
 
-Is available on ``godoc``:
-
- https://godoc.org/github.com/CombatMage/go-relayserver
-
-## Examples
-
-TODO
+```sh
+ $ go-relayserver optional: -port-stream <port> -port-ws <port> -s <secret>
+```

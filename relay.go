@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -13,8 +14,8 @@ import (
 
 const recordToFile = false
 
-const portStream = ":8081"
-const portWS = ":8082"
+const defaultPortStream = ":8081"
+const defaultPortWS = ":8082"
 const bufferSize = 4 * 1000 * 1024 // 4MB
 
 var wsClients = make(map[*websocket.Conn]bool)
@@ -27,7 +28,21 @@ var upgrader = websocket.Upgrader{
 }
 var recordName = fmt.Sprintf("%s_record.mpeg", time.Now().Format("20060102_1504"))
 
+type input struct {
+	portStream   string
+	portWS       string
+	secretStream string
+	printHelp    bool
+}
+
 func main() {
+	input := readCmdArguments()
+	if input.printHelp {
+		fmt.Println("Usage: ")
+		fmt.Println("go-relayserver.exe optional: -port-stream <port> -port-ws <port> -s <secret>")
+		return
+	}
+
 	stream := make(chan []byte)
 	done := make(chan bool)
 
@@ -42,8 +57,8 @@ func main() {
 	}
 
 	go consumeStream(stream, done, recording)
-	go waitForStream(portStream, stream)
-	go waitForWS(portWS)
+	go waitForStream(input.portStream, input.secretStream, stream)
+	go waitForWS(input.portWS)
 
 	fmt.Println("Relay started, hit Enter-key to close")
 
@@ -53,11 +68,28 @@ func main() {
 	fmt.Println("Shuting down...")
 }
 
-func waitForStream(port string, stream chan<- []byte) {
-	log.Println("Listening for incoming stream on " + portStream)
+func readCmdArguments() input {
+	help := flag.Bool("h", false, "print help")
+
+	portStream := flag.String("port-stream", defaultPortStream, "Port to listen for stream")
+	portWS := flag.String("port-ws", defaultPortWS, "Port to listen for websockets")
+	secretStream := flag.String("s", "", "Secure stream with this password")
+
+	flag.Parse()
+
+	return input{
+		portStream:   *portStream,
+		portWS:       *portWS,
+		secretStream: *secretStream,
+		printHelp:    *help,
+	}
+}
+
+func waitForStream(port string, secret string, stream chan<- []byte) {
+	log.Println("Listening for incoming stream on " + port)
 
 	streamReader := http.NewServeMux()
-	streamReader.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	streamReader.HandleFunc("/"+secret, func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Received stream connection from: " + r.RemoteAddr)
 
 		input := r.Body
@@ -122,7 +154,6 @@ func consumeStream(stream <-chan []byte, done <-chan bool, recording *os.File) {
 			if recording != nil {
 				go writeToFile(data, recording)
 			}
-
 			for conn := range wsClients {
 				if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 					log.Println(err.Error())
