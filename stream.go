@@ -15,7 +15,7 @@ func waitForStream(port string, secret string) <-chan *[]byte {
 	go func() {
 		streamReader := http.NewServeMux()
 		streamReader.HandleFunc("/"+secret, func(w http.ResponseWriter, r *http.Request) {
-			log.Println("Stream connected: " + r.RemoteAddr)
+			log.Println("Stream client connected: " + r.RemoteAddr)
 
 			input := r.Body
 			defer input.Close()
@@ -36,7 +36,7 @@ func waitForStream(port string, secret string) <-chan *[]byte {
 				chunk := buffer[:n]
 				stream <- &chunk
 			}
-			log.Println("Stream closed")
+			log.Println("Stream client disconnected")
 		})
 		http.ListenAndServe(port, streamReader)
 	}()

@@ -12,12 +12,12 @@ func relayStreamToWSClients(stream <-chan *[]byte, clients <-chan *wsClient) {
 		for {
 			// wait for clients to connect
 			newClient := <-clients
-			log.Println("Client connected: " + newClient.remoteAddress)
+			log.Println("WS client connected: " + newClient.remoteAddress)
 			// start goroutine to monitor the connection
 			go func() {
 				<-newClient.isClosed
 				delete(connectedClients, newClient)
-				log.Println("Client disconnected: " + newClient.remoteAddress)
+				log.Println("WS client disconnected: " + newClient.remoteAddress)
 			}()
 			connectedClients[newClient] = true
 		}

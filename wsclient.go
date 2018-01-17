@@ -30,8 +30,6 @@ func waitForWSClients(port string) <-chan *wsClient {
 	go func() {
 		connectWs := http.NewServeMux()
 		connectWs.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			log.Println("Received ws connection from: " + r.RemoteAddr)
-
 			ws, err := upgrader.Upgrade(w, r, nil)
 			if err != nil {
 				log.Println(err)
