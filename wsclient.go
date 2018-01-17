@@ -54,9 +54,8 @@ func writeToConnection(conn *websocket.Conn) chan<- *[]byte {
 	go func() {
 		for {
 			data := <-inputStream
-			if err := conn.WriteMessage(websocket.BinaryMessage, *data); err != nil {
-				log.Println(err.Error())
-			}
+			// ignore writing error to increase throughput
+			conn.WriteMessage(websocket.BinaryMessage, *data)
 		}
 	}()
 	return inputStream

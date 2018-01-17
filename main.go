@@ -33,7 +33,7 @@ func main() {
 	stream := waitForStream(config.portStream, config.secretStream)
 	if recordToFile {
 		fmt.Println("Recording stream to " + recordName)
-		fmt.Println("Warning: Recording stream may decrease performance and shoudl be used for testing only")
+		fmt.Println("Warning: Recording stream may decrease performance and should be used for testing only")
 		stream = recordStream(stream, recordName)
 	}
 
