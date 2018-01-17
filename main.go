@@ -3,9 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
 	"time"
 )
 
@@ -31,21 +28,13 @@ func main() {
 		fmt.Println("go-relayserver.exe optional: -port-stream <port> -port-ws <port> -s <secret>")
 		return
 	}
-
 	done := make(chan bool)
 
-	// var recording *os.File
-	// if recordToFile {
-	// 	f, err := os.Create(recordName)
-	// 	if err != nil {
-	// 		log.Println(err.Error())
-	// 	} else {
-	// 		defer f.Close()
-	// 		recording = f
-	// 	}
-	// }
-
 	stream := waitForStream(config.portStream, config.secretStream)
+	if recordToFile {
+		stream = recordStream(stream, recordName)
+	}
+
 	clients := waitForWSClients(config.portWS)
 	relayStreamToWSClients(stream, clients)
 
@@ -72,39 +61,4 @@ func readCmdArguments() config {
 		secretStream: *secretStream,
 		printHelp:    *help,
 	}
-}
-
-func waitForStream(port string, secret string) <-chan *[]byte {
-	log.Println("Listening for incoming stream on " + port)
-
-	stream := make(chan *[]byte)
-	go func() {
-		streamReader := http.NewServeMux()
-		streamReader.HandleFunc("/"+secret, func(w http.ResponseWriter, r *http.Request) {
-			log.Println("Received stream connection from: " + r.RemoteAddr)
-
-			input := r.Body
-			defer input.Close()
-
-			// read from input until EOF
-			buffer := make([]byte, bufferSize)
-			for {
-				n, err := input.Read(buffer[:cap(buffer)])
-				if n == 0 {
-					if err == nil {
-						continue
-					}
-					if err == io.EOF {
-						break
-					}
-					fmt.Println(err.Error())
-				}
-				chunk := buffer[:n]
-				stream <- &chunk
-			}
-			log.Println("Stream closed")
-		})
-		http.ListenAndServe(port, streamReader)
-	}()
-	return stream
 }
