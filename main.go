@@ -6,10 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 const recordToFile = false
@@ -18,17 +15,9 @@ const defaultPortStream = ":8081"
 const defaultPortWS = ":8082"
 const bufferSize = 8 * 1000 * 1024 // 8MB
 
-var wsClients = make(map[*websocket.Conn]bool)
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  bufferSize,
-	WriteBufferSize: bufferSize,
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
 var recordName = fmt.Sprintf("%s_record.mpeg", time.Now().Format("20060102_1504"))
 
-type input struct {
+type config struct {
 	portStream   string
 	portWS       string
 	secretStream string
@@ -36,8 +25,8 @@ type input struct {
 }
 
 func main() {
-	input := readCmdArguments()
-	if input.printHelp {
+	config := readCmdArguments()
+	if config.printHelp {
 		fmt.Println("Usage: ")
 		fmt.Println("go-relayserver.exe optional: -port-stream <port> -port-ws <port> -s <secret>")
 		return
@@ -45,20 +34,20 @@ func main() {
 
 	done := make(chan bool)
 
-	var recording *os.File
-	if recordToFile {
-		f, err := os.Create(recordName)
-		if err != nil {
-			log.Println(err.Error())
-		} else {
-			defer f.Close()
-			recording = f
-		}
-	}
+	// var recording *os.File
+	// if recordToFile {
+	// 	f, err := os.Create(recordName)
+	// 	if err != nil {
+	// 		log.Println(err.Error())
+	// 	} else {
+	// 		defer f.Close()
+	// 		recording = f
+	// 	}
+	// }
 
-	stream := waitForStream(input.portStream, input.secretStream)
-	go consumeStream(stream, done, recording)
-	go waitForWS(input.portWS)
+	stream := waitForStream(config.portStream, config.secretStream)
+	clients := waitForWSClients(config.portWS)
+	relayStreamToWSClients(stream, clients)
 
 	fmt.Println("Relay started, hit Enter-key to close")
 
@@ -68,7 +57,7 @@ func main() {
 	fmt.Println("Shuting down...")
 }
 
-func readCmdArguments() input {
+func readCmdArguments() config {
 	help := flag.Bool("h", false, "print help")
 
 	portStream := flag.String("port-stream", defaultPortStream, "Port to listen for stream")
@@ -77,7 +66,7 @@ func readCmdArguments() input {
 
 	flag.Parse()
 
-	return input{
+	return config{
 		portStream:   *portStream,
 		portWS:       *portWS,
 		secretStream: *secretStream,
@@ -118,67 +107,4 @@ func waitForStream(port string, secret string) <-chan *[]byte {
 		http.ListenAndServe(port, streamReader)
 	}()
 	return stream
-}
-
-func waitForWS(port string) {
-	log.Println("Listening for incoming ws on " + port)
-
-	connectWs := http.NewServeMux()
-	connectWs.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Received ws connection from: " + r.RemoteAddr)
-
-		ws, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		log.Println("Client connected: " + ws.RemoteAddr().String())
-
-		wsClients[ws] = true
-		go monitorWS(ws)
-	})
-	http.ListenAndServe(port, connectWs)
-}
-
-// monitorWS waits for the websocket to disconnect.
-// It closes the connection and removes the ws from the connected pool.
-func monitorWS(conn *websocket.Conn) {
-	for {
-		if _, _, err := conn.NextReader(); err != nil {
-			delete(wsClients, conn)
-			conn.Close()
-			log.Println("Client disconnected: " + conn.RemoteAddr().String())
-			break
-		}
-	}
-}
-
-// consumeStream reads from stream channel and writes the []byte to each connected websocket.
-// If done is set, it closes all connections.
-// If given file for recording is not null, the stream is also written to the file.
-func consumeStream(stream <-chan *[]byte, done <-chan bool, recording *os.File) {
-	for {
-		select {
-		case data := <-stream:
-			if recording != nil {
-				// decouple file writing in
-				writeToFile := func(data *[]byte, file *os.File) {
-					if file != nil {
-						file.Write(*data)
-					}
-				}
-				go writeToFile(data, recording)
-			}
-			for conn := range wsClients {
-				if err := conn.WriteMessage(websocket.BinaryMessage, *data); err != nil {
-					log.Println(err.Error())
-				}
-			}
-		case <-done:
-			for conn := range wsClients {
-				conn.Close()
-				delete(wsClients, conn)
-			}
-		}
-	}
 }

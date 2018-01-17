@@ -8,8 +8,9 @@ import (
 )
 
 type wsClient struct {
-	writeStream chan<- *[]byte
-	isClosed    <-chan bool
+	remoteAddress string
+	writeStream   chan<- *[]byte
+	isClosed      <-chan bool
 }
 
 func waitForWSClients(port string) <-chan *wsClient {
@@ -33,11 +34,10 @@ func waitForWSClients(port string) <-chan *wsClient {
 				log.Println(err)
 				return
 			}
-			log.Println("Client connected: " + ws.RemoteAddr().String())
-
 			connectedClients <- &wsClient{
-				writeStream: writeToConnection(ws),
-				isClosed:    monitorConnection(ws),
+				remoteAddress: ws.RemoteAddr().String(),
+				writeStream:   writeToConnection(ws),
+				isClosed:      monitorConnection(ws),
 			}
 		})
 		http.ListenAndServe(port, connectWs)
