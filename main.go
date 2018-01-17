@@ -29,7 +29,6 @@ func main() {
 		fmt.Println("go-relayserver.exe optional: -port-stream <port> -port-ws <port> -s <secret>")
 		return
 	}
-	done := make(chan bool)
 
 	stream := waitForStream(config.portStream, config.secretStream)
 	if recordToFile {
@@ -42,10 +41,7 @@ func main() {
 	relayStreamToWSClients(stream, clients)
 
 	fmt.Println("Relay started, hit Enter-key to close")
-
 	fmt.Scanln()
-	done <- true
-
 	fmt.Println("Shuting down...")
 }
 

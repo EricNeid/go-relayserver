@@ -15,7 +15,7 @@ func waitForStream(port string, secret string) <-chan *[]byte {
 	go func() {
 		streamReader := http.NewServeMux()
 		streamReader.HandleFunc("/"+secret, func(w http.ResponseWriter, r *http.Request) {
-			log.Println("Received stream connection from: " + r.RemoteAddr)
+			log.Println("Stream connected: " + r.RemoteAddr)
 
 			input := r.Body
 			defer input.Close()
