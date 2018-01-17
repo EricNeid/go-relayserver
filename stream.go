@@ -46,15 +46,15 @@ func waitForStream(port string, secret string) <-chan *[]byte {
 // recordStream write the given stream to file. It returns the stream for further uses
 // and is not blocking the channel.
 func recordStream(stream <-chan *[]byte, recordName string) <-chan *[]byte {
+	c := make(chan *[]byte)
 	f, err := os.Create(recordName)
 	if err != nil {
 		log.Println(err.Error())
 		return stream
 	}
-	defer f.Close()
 
-	c := make(chan *[]byte)
 	go func() {
+		defer f.Close()
 		for {
 			// directly relay data to outstream to prevent blocking
 			data := <-stream

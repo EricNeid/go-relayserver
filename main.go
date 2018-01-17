@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -32,6 +33,8 @@ func main() {
 
 	stream := waitForStream(config.portStream, config.secretStream)
 	if recordToFile {
+		fmt.Println("Recording stream to " + recordName)
+		fmt.Println("Warning: Recording stream may decrease performance and shoudl be used for testing only")
 		stream = recordStream(stream, recordName)
 	}
 
@@ -56,9 +59,16 @@ func readCmdArguments() config {
 	flag.Parse()
 
 	return config{
-		portStream:   *portStream,
-		portWS:       *portWS,
+		portStream:   normalizePort(*portStream),
+		portWS:       normalizePort(*portWS),
 		secretStream: *secretStream,
 		printHelp:    *help,
 	}
+}
+
+func normalizePort(port string) string {
+	if !strings.HasPrefix(port, ":") {
+		return ":" + port
+	}
+	return port
 }
