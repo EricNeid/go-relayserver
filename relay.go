@@ -4,6 +4,8 @@ import (
 	"log"
 )
 
+// relayStreamToWSClients waits for clients to connect and relays the given stream to
+// connected websocket clients. If a client disconnects, it does no longer receives the stream.
 func relayStreamToWSClients(stream <-chan *[]byte, clients <-chan *wsClient) {
 	connectedClients := make(map[*wsClient]bool)
 	go func() {

@@ -7,12 +7,15 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// wsClient represents a write-only connection to connected websocket.
 type wsClient struct {
 	remoteAddress string
 	writeStream   chan<- *[]byte
 	isClosed      <-chan bool
 }
 
+// waitForWSClients waits for connected clients. New connections are pushed on the
+// returned channel.
 func waitForWSClients(port string) <-chan *wsClient {
 	connectedClients := make(chan *wsClient)
 
@@ -46,6 +49,8 @@ func waitForWSClients(port string) <-chan *wsClient {
 	return connectedClients
 }
 
+// writeToConnection runs a goroutine to write to the given connection.
+// It returns a channel for communication.
 func writeToConnection(conn *websocket.Conn) chan<- *[]byte {
 	inputStream := make(chan *[]byte)
 	go func() {
