@@ -30,19 +30,26 @@ func main() {
 		return
 	}
 
-	stream := waitForStream(config.portStream, config.secretStream)
+	RunRelayServer(config.portStream, config.portWS, config.secretStream)
+
+	fmt.Println("Relay started, hit Enter-key to close")
+	fmt.Scanln()
+	fmt.Println("Shuting down...")
+}
+
+// RunRelayServer starts the relayserver.
+// Listen for single incoming stream on: localhost:portStream/streamPassword.
+// Listen for websockets on: localhost:portWS
+func RunRelayServer(portStream string, portWS string, streamPassword string) {
+	stream := waitForStream(portStream, streamPassword)
 	if recordToFile {
 		fmt.Println("Recording stream to " + recordName)
 		fmt.Println("Warning: Recording stream may decrease performance and should be used for testing only")
 		stream = recordStream(stream, recordName)
 	}
 
-	clients := waitForWSClients(config.portWS)
+	clients := waitForWSClients(portWS)
 	relayStreamToWSClients(stream, clients)
-
-	fmt.Println("Relay started, hit Enter-key to close")
-	fmt.Scanln()
-	fmt.Println("Shuting down...")
 }
 
 func readCmdArguments() config {

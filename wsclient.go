@@ -17,6 +17,7 @@ type wsClient struct {
 // waitForWSClients waits for connected clients. New connections are pushed on the
 // returned channel.
 func waitForWSClients(port string) <-chan *wsClient {
+	log.Println("Listening for incoming ws on " + port)
 	connectedClients := make(chan *wsClient)
 
 	upgrader := websocket.Upgrader{
