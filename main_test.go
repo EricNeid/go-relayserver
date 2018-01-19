@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/url"
 	"os/exec"
 	"testing"
@@ -48,14 +49,18 @@ func getConnectedWSClient(t *testing.T) *websocket.Conn {
 	}
 	c, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
 	if err != nil {
-		assert.Fail(t, "Could not create websocket client: "+err.Error())
+		assert.FailNow(t, "Could not create websocket client: "+err.Error())
 	}
 	return c
 }
 
 func startVideoStream(t *testing.T) {
 	c := exec.Command("testdata/stream_video.bat")
-	if err := c.Run(); err != nil {
-		assert.Fail(t, "Could not send video stream: "+err.Error())
-	}
+	go func() {
+		out, err := c.Output()
+		if err != nil {
+			assert.FailNow(t, "Could not send video stream: "+err.Error())
+		}
+		fmt.Println(out)
+	}()
 }
