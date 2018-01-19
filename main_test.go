@@ -1,25 +1,14 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
-	"io"
-	"io/ioutil"
-	"mime/multipart"
-	"net"
-	"net/http"
 	"net/url"
-	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/gorilla/websocket"
 
 	"github.com/stretchr/testify/assert"
 )
-
-type conn struct {
-	net.Conn
-}
 
 func TestRunRelayServer(t *testing.T) {
 	// arrange
@@ -28,18 +17,27 @@ func TestRunRelayServer(t *testing.T) {
 	// connect with ws client
 	ws := getConnectedWSClient(t)
 	defer ws.Close()
+	// channel to signal if stream was received
+	done := make(chan bool)
 
 	// action
-	go postFile("testdata/SampleVideo_1280x720_30mb.mp4")
-	for {
-		_, _, err := ws.ReadMessage()
-		if err != nil {
-			break
+	// start receiving data
+	go func() {
+		for {
+			_, _, err := ws.ReadMessage()
+			if err != nil {
+				break
+			}
 		}
-	}
+		done <- true
+	}()
+	// start sending data
+	startVideoStream(t)
 
 	// verify
-	fmt.Println("done")
+	// wait till data was send
+	<-done
+	// TODO compare data
 }
 
 func getConnectedWSClient(t *testing.T) *websocket.Conn {
@@ -50,50 +48,14 @@ func getConnectedWSClient(t *testing.T) *websocket.Conn {
 	}
 	c, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
 	if err != nil {
-		assert.Fail(t, "Could not create websocket client")
+		assert.Fail(t, "Could not create websocket client: "+err.Error())
 	}
 	return c
 }
 
-func postFile(filename string) error {
-	targetURL := "http://localhost:8081/"
-
-	bodyBuf := &bytes.Buffer{}
-	bodyWriter := multipart.NewWriter(bodyBuf)
-
-	// this step is very important
-	fileWriter, err := bodyWriter.CreateFormFile("uploadfile", filename)
-	if err != nil {
-		fmt.Println("error writing to buffer")
-		return err
+func startVideoStream(t *testing.T) {
+	c := exec.Command("testdata/stream_video.bat")
+	if err := c.Run(); err != nil {
+		assert.Fail(t, "Could not send video stream: "+err.Error())
 	}
-
-	// open file handle
-	fh, err := os.Open(filename)
-	if err != nil {
-		fmt.Println("error opening file")
-		return err
-	}
-	defer fh.Close()
-
-	_, err = io.Copy(fileWriter, fh)
-	if err != nil {
-		return err
-	}
-
-	contentType := bodyWriter.FormDataContentType()
-	bodyWriter.Close()
-
-	resp, err := http.Post(targetURL, contentType, bodyBuf)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	fmt.Println(resp.Status)
-	fmt.Println(string(respBody))
-	return nil
 }
