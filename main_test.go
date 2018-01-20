@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRunRelayServer(t *testing.T) {
+func TestRunRelayServer__ShouldReceiveWholeStream(t *testing.T) {
 	// arrange
 	//start server
 	RunRelayServer(":8081", ":8082", "secret1234")
@@ -19,12 +19,14 @@ func TestRunRelayServer(t *testing.T) {
 	defer ws.Close()
 	// channel to signal if stream was received
 	done := make(chan bool)
+	receivedBytes := make(chan []byte)
 
 	// action
 	// start receiving data
 	go func() {
 		for {
-			_, _, err := ws.ReadMessage()
+			_, chunk, err := ws.ReadMessage()
+			receivedBytes <- chunk
 			if err != nil {
 				break
 			}
