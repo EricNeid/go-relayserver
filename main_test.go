@@ -54,7 +54,7 @@ func getConnectedWSClient(t *testing.T) *websocket.Conn {
 
 func startVideoStream(t *testing.T, done chan<- bool) {
 	go func() {
-		c := exec.Command("stream_video.bat")
+		c := exec.Command("testdata\\stream_video.bat")
 		err := c.Run()
 		if err != nil {
 			assert.FailNow(t, "Could not send video stream: "+err.Error())
