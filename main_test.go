@@ -13,7 +13,7 @@ import (
 func TestRunRelayServer(t *testing.T) {
 	// arrange
 	//start server
-	RunRelayServer(":8081", ":8082", "")
+	RunRelayServer(":8081", ":8082", "secret1234")
 	// connect with ws client
 	ws := getConnectedWSClient(t)
 	defer ws.Close()
@@ -29,10 +29,9 @@ func TestRunRelayServer(t *testing.T) {
 				break
 			}
 		}
-		done <- true
 	}()
 	// start sending data
-	startVideoStream(t)
+	startVideoStream(t, done)
 
 	// verify
 	// wait till data was send
@@ -53,12 +52,13 @@ func getConnectedWSClient(t *testing.T) *websocket.Conn {
 	return c
 }
 
-func startVideoStream(t *testing.T) {
+func startVideoStream(t *testing.T, done chan<- bool) {
 	go func() {
-		c := exec.Command("testdata/stream_video.bat")
+		c := exec.Command("stream_video.bat")
 		err := c.Run()
 		if err != nil {
 			assert.FailNow(t, "Could not send video stream: "+err.Error())
 		}
+		done <- true
 	}()
 }
