@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"net/url"
 	"os/exec"
 	"testing"
@@ -16,7 +17,6 @@ func TestRunRelayServer__ShouldReceiveWholeStream(t *testing.T) {
 	RunRelayServer(":8081", ":8082", "secret1234")
 	// connect with ws client
 	ws := getConnectedWSClient(t)
-	defer ws.Close()
 	// channel to signal if stream was received
 	done := make(chan bool)
 	receivedBytes := make(chan []byte)
@@ -25,11 +25,11 @@ func TestRunRelayServer__ShouldReceiveWholeStream(t *testing.T) {
 	// start receiving data
 	go func() {
 		for {
-			_, chunk, err := ws.ReadMessage()
-			receivedBytes <- chunk
+			_, _, err := ws.ReadMessage()
 			if err != nil {
 				break
 			}
+			//receivedBytes <- chunk
 		}
 	}()
 	// start sending data
@@ -38,7 +38,12 @@ func TestRunRelayServer__ShouldReceiveWholeStream(t *testing.T) {
 	// verify
 	// wait till data was send
 	<-done
-	// TODO compare data
+	ws.Close()
+	close(receivedBytes)
+
+	expected := getBytesForStream(t)
+	received := joinChannel(receivedBytes)
+	assert.Equal(t, len(expected), len(received))
 }
 
 func getConnectedWSClient(t *testing.T) *websocket.Conn {
@@ -63,4 +68,22 @@ func startVideoStream(t *testing.T, done chan<- bool) {
 		}
 		done <- true
 	}()
+}
+
+func getBytesForStream(t *testing.T) []byte {
+	content, err := ioutil.ReadFile("testdata/SampleVideo_1280x720_30mb.mp4")
+	if err != nil {
+		assert.FailNow(t, "Could not read video stream: "+err.Error())
+	}
+	return content
+}
+
+func joinChannel(chunks <-chan []byte) []byte {
+	var joined []byte
+	for chunk := range chunks {
+		for _, b := range chunk {
+			joined = append(joined, b)
+		}
+	}
+	return joined
 }
