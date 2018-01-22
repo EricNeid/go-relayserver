@@ -11,6 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const testVideo = "testdata/SampleVideo_1280x720_5mb.mp4"
+const streamVideo = "testdata\\stream_video.bat"
+
 func TestRunRelayServer__ShouldReceiveWholeStream(t *testing.T) {
 	// arrange
 	//start server
@@ -19,17 +22,17 @@ func TestRunRelayServer__ShouldReceiveWholeStream(t *testing.T) {
 	ws := getConnectedWSClient(t)
 	// channel to signal if stream was received
 	done := make(chan bool)
-	receivedBytes := make(chan []byte)
+	var receivedBytes [][]byte
 
 	// action
 	// start receiving data
 	go func() {
 		for {
-			_, _, err := ws.ReadMessage()
+			_, chunk, err := ws.ReadMessage()
 			if err != nil {
 				break
 			}
-			//receivedBytes <- chunk
+			receivedBytes = append(receivedBytes, chunk)
 		}
 	}()
 	// start sending data
@@ -39,10 +42,9 @@ func TestRunRelayServer__ShouldReceiveWholeStream(t *testing.T) {
 	// wait till data was send
 	<-done
 	ws.Close()
-	close(receivedBytes)
 
 	expected := getBytesForStream(t)
-	received := joinChannel(receivedBytes)
+	received := joinBytes(receivedBytes)
 	assert.Equal(t, len(expected), len(received))
 }
 
@@ -61,7 +63,7 @@ func getConnectedWSClient(t *testing.T) *websocket.Conn {
 
 func startVideoStream(t *testing.T, done chan<- bool) {
 	go func() {
-		c := exec.Command("testdata\\stream_video.bat")
+		c := exec.Command(streamVideo)
 		err := c.Run()
 		if err != nil {
 			assert.FailNow(t, "Could not send video stream: "+err.Error())
@@ -71,16 +73,16 @@ func startVideoStream(t *testing.T, done chan<- bool) {
 }
 
 func getBytesForStream(t *testing.T) []byte {
-	content, err := ioutil.ReadFile("testdata/stream_video.bat")
+	content, err := ioutil.ReadFile(testVideo)
 	if err != nil {
 		assert.FailNow(t, "Could not read video stream: "+err.Error())
 	}
 	return content
 }
 
-func joinChannel(chunks <-chan []byte) []byte {
+func joinBytes(chunks [][]byte) []byte {
 	var joined []byte
-	for chunk := range chunks {
+	for _, chunk := range chunks {
 		for _, b := range chunk {
 			joined = append(joined, b)
 		}
