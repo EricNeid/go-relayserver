@@ -2,7 +2,9 @@ package main
 
 import (
 	"io/ioutil"
+	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"testing"
 
@@ -36,7 +38,8 @@ func TestRunRelayServer__ShouldReceiveWholeStream(t *testing.T) {
 		}
 	}()
 	// start sending data
-	startVideoStream(t, done)
+	//startVideoStream(t, done)
+	streamTestData(t, done)
 
 	// verify
 	// wait till data was send
@@ -67,6 +70,26 @@ func startVideoStream(t *testing.T, done chan<- bool) {
 		err := c.Run()
 		if err != nil {
 			assert.FailNow(t, "Could not send video stream: "+err.Error())
+		}
+		done <- true
+	}()
+}
+
+func streamTestData(t *testing.T, done chan<- bool) {
+	input, err := os.Open(testVideo)
+	if err != nil {
+		assert.FailNow(t, "Could not open test video: "+err.Error())
+	}
+
+	req, err := http.NewRequest("Post", "localhost:8081/secret1234", input)
+	if err != nil {
+		assert.FailNow(t, "Could not create request: "+err.Error())
+	}
+	client := http.DefaultClient
+	go func() {
+		_, err := client.Do(req)
+		if err != nil {
+			assert.FailNow(t, "Could not send request: "+err.Error())
 		}
 		done <- true
 	}()
