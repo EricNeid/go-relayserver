@@ -71,7 +71,7 @@ func startVideoStream(t *testing.T, done chan<- bool) {
 }
 
 func getBytesForStream(t *testing.T) []byte {
-	content, err := ioutil.ReadFile("testdata/SampleVideo_1280x720_30mb.mp4")
+	content, err := ioutil.ReadFile("testdata/stream_video.bat")
 	if err != nil {
 		assert.FailNow(t, "Could not read video stream: "+err.Error())
 	}
