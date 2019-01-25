@@ -5,7 +5,7 @@ A simple websocket relay server, written in go. It relays incoming stream to mul
 ## Install
 
 ```sh
- $ go get github.com/CombatMage/go-relayserver
+ $ go get github.com/EricNeid/go-relayserver
 ```
 
 ## Usage
