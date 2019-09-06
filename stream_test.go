@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"os/exec"
 	"testing"
 
@@ -42,8 +43,8 @@ func TestWaitForStream(t *testing.T) {
 
 func TestRecordStream(t *testing.T) {
 	// arrange
+	os.Remove("testdata/recorded-sample.mpeg")
 	stream := waitForStream(":8989", "test")
-
 	go func() {
 		streamRecorded := recordStream(stream, "testdata/recorded-sample.mpeg")
 		for {
