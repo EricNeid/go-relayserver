@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -28,8 +29,15 @@ func TestRelayStreamToWSClients(t *testing.T) {
 	relayStreamToWSClients(stream, clients)
 
 	// action
+	start := time.Now()
 	err = startSendingSampleStream(":8993")
+	timeTrack(t, start, "TestRelayStreamToWSClients: Sending data")
 
 	// verify
 	assert.NoError(t, err)
+}
+
+func timeTrack(t *testing.T, start time.Time, name string) {
+	elapsed := time.Since(start)
+	t.Logf("%s took %s", name, elapsed)
 }
