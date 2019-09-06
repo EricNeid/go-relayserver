@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func startSendingSampleStream() error {
+func startSendingSampleStream(port string) error {
 	streamSender := exec.Command("ffmpeg",
 		"-i", "testdata/sample.mp4",
 		"-f", "mpegts",
@@ -18,7 +18,7 @@ func startSendingSampleStream() error {
 		"-r", "30",
 		"-b:v", "3000k",
 		"-q:v", "6",
-		"http://localhost:8989/test")
+		"http://localhost"+port+"/test")
 
 	_, err := streamSender.Output()
 	return err
@@ -26,9 +26,9 @@ func startSendingSampleStream() error {
 
 func TestWaitForStream(t *testing.T) {
 	// arrange
-	stream := waitForStream(":8989", "test")
+	stream := waitForStream(":8990", "test")
 	go func() {
-		err := startSendingSampleStream()
+		err := startSendingSampleStream(":8990")
 		if err != nil {
 			assert.Fail(t, "Error while sending stream")
 		}
@@ -44,7 +44,7 @@ func TestWaitForStream(t *testing.T) {
 func TestRecordStream(t *testing.T) {
 	// arrange
 	os.Remove("testdata/recorded-sample.mpeg")
-	stream := waitForStream(":8989", "test")
+	stream := waitForStream(":8991", "test")
 	go func() {
 		streamRecorded := recordStream(stream, "testdata/recorded-sample.mpeg")
 		for {
@@ -53,7 +53,7 @@ func TestRecordStream(t *testing.T) {
 	}()
 
 	// action
-	err := startSendingSampleStream()
+	err := startSendingSampleStream(":8991")
 
 	// verify
 	assert.NoError(t, err)

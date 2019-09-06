@@ -29,7 +29,7 @@ func TestRelayStreamToWSClients(t *testing.T) {
 	relayStreamToWSClients(stream, clients)
 
 	// action
-	err = startSendingSampleStream()
+	err = startSendingSampleStream(":8989")
 
 	// verify
 	assert.NoError(t, err)
