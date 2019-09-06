@@ -10,7 +10,7 @@ func TestRelayStreamToWSClients(t *testing.T) {
 	// arrange
 	stream := waitForStream(":8989", "test")
 	clients := waitForWSClients(":8990")
-	con, err := connectClient()
+	con, err := connectClient(":8990")
 	if err != nil {
 		assert.Fail(t, "Error while creating client connection")
 	}
