@@ -16,7 +16,6 @@ func TestRelayStreamToWSClients(t *testing.T) {
 		assert.Fail(t, "Error while creating client connection")
 	}
 	defer con.Close()
-
 	go func() {
 		for {
 			_, _, err := con.ReadMessage()
@@ -35,9 +34,4 @@ func TestRelayStreamToWSClients(t *testing.T) {
 
 	// verify
 	assert.NoError(t, err)
-}
-
-func timeTrack(t *testing.T, start time.Time, name string) {
-	elapsed := time.Since(start)
-	t.Logf("%s took %s", name, elapsed)
 }
