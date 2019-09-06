@@ -56,10 +56,9 @@ func recordStream(stream <-chan *[]byte, recordName string) <-chan *[]byte {
 	go func() {
 		defer f.Close()
 		for {
-			// directly relay data to outstream to prevent blocking
-			data := <-stream
-			c <- data
-			if _, err := f.Write(*data); err != nil {
+			newChunk := <-stream
+			c <- newChunk
+			if _, err := f.Write(*newChunk); err != nil {
 				log.Println(err.Error())
 			}
 		}

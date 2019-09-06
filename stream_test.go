@@ -26,7 +26,6 @@ func startSendingSampleStream() error {
 func TestWaitForStream(t *testing.T) {
 	// arrange
 	stream := waitForStream(":8989", "test")
-
 	go func() {
 		err := startSendingSampleStream()
 		if err != nil {
@@ -39,4 +38,22 @@ func TestWaitForStream(t *testing.T) {
 
 	// verify
 	assert.NotEmpty(t, firstChunk)
+}
+
+func TestRecordStream(t *testing.T) {
+	// arrange
+	stream := waitForStream(":8989", "test")
+
+	go func() {
+		streamRecorded := recordStream(stream, "testdata/recorded-sample.mpeg")
+		for {
+			<-streamRecorded
+		}
+	}()
+
+	// action
+	err := startSendingSampleStream()
+
+	// verify
+	assert.NoError(t, err)
 }

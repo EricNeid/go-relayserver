@@ -1,2 +1,0 @@
-ECHO ffmpeg -i sample.mp4 -f mpegts -codec:v mpeg1video -s 1280x720 -rtbufsize 2048M -r 30 -b:v 3000k  -q:v 6 http://localhost:8989/test
-ffmpeg -i "sample.mp4" -f mpegts -codec:v mpeg1video -s 1280x720 -rtbufsize 2048M -r 30 -b:v 3000k  -q:v 6 http://localhost:8989/test
