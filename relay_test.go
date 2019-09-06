@@ -33,4 +33,3 @@ func TestRelayStreamToWSClients(t *testing.T) {
 	// verify
 	assert.NoError(t, err)
 }
-
