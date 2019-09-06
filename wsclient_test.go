@@ -8,13 +8,13 @@ import (
 )
 
 func connectClient() (*websocket.Conn, error) {
-	c, _, err := websocket.DefaultDialer.Dial("ws://localhost:8989", nil)
+	c, _, err := websocket.DefaultDialer.Dial("ws://localhost:8990", nil)
 	return c, err
 }
 
 func TestWaitForWSClients(t *testing.T) {
 	// arrange
-	clients := waitForWSClients(":8989")
+	clients := waitForWSClients(":8990")
 
 	con, err := connectClient()
 	if err != nil {
