@@ -57,4 +57,6 @@ func TestRecordStream(t *testing.T) {
 
 	// verify
 	assert.NoError(t, err)
+	recorded, _ := os.Stat("testdata/recorded-sample.mpeg")
+	assert.NotEmpty(t, recorded.Size())
 }
