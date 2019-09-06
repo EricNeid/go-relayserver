@@ -8,9 +8,9 @@ import (
 
 func TestRelayStreamToWSClients(t *testing.T) {
 	// arrange
-	stream := waitForStream(":8989", "test")
-	clients := waitForWSClients(":8990")
-	con, err := connectClient(":8990")
+	stream := waitForStream(":8990", "test")
+	clients := waitForWSClients(":8991")
+	con, err := connectClient(":8991")
 	if err != nil {
 		assert.Fail(t, "Error while creating client connection")
 	}
@@ -18,18 +18,17 @@ func TestRelayStreamToWSClients(t *testing.T) {
 
 	go func() {
 		for {
-			con.ReadMessage()
-			//fmt.Printf("Received %d bytes", len(bytes))
-			//if errClient != nil {
-			//	assert.Fail(t, "Error while receiving bytes %s", errClient)
-			//}
+			_, _, err := con.ReadMessage()
+			if err != nil {
+				break
+			}
 		}
 	}()
 
 	relayStreamToWSClients(stream, clients)
 
 	// action
-	err = startSendingSampleStream(":8989")
+	err = startSendingSampleStream(":8990")
 
 	// verify
 	assert.NoError(t, err)
