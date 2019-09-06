@@ -14,9 +14,9 @@ func connectClient(port string) (*websocket.Conn, error) {
 
 func TestWaitForWSClients(t *testing.T) {
 	// arrange
-	clients := waitForWSClients(":8990")
+	clients := waitForWSClients(":8992")
 
-	con, err := connectClient(":8990")
+	con, err := connectClient(":8992")
 	if err != nil {
 		assert.Fail(t, "Error while creating client connection")
 	}

@@ -8,9 +8,9 @@ import (
 
 func TestRelayStreamToWSClients(t *testing.T) {
 	// arrange
-	stream := waitForStream(":8990", "test")
-	clients := waitForWSClients(":8991")
-	con, err := connectClient(":8991")
+	stream := waitForStream(":8993", "test")
+	clients := waitForWSClients(":8994")
+	con, err := connectClient(":8994")
 	if err != nil {
 		assert.Fail(t, "Error while creating client connection")
 	}
@@ -28,8 +28,9 @@ func TestRelayStreamToWSClients(t *testing.T) {
 	relayStreamToWSClients(stream, clients)
 
 	// action
-	err = startSendingSampleStream(":8990")
+	err = startSendingSampleStream(":8993")
 
 	// verify
 	assert.NoError(t, err)
 }
+
