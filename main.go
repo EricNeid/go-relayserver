@@ -7,10 +7,10 @@ import (
 	"time"
 )
 
-const recordToFile = false
-
 const defaultPortStream = ":8081"
 const defaultPortWS = ":8082"
+const defaultRecordToFile = false
+
 const bufferSize = 8 * 1000 * 1024 // 8MB
 
 var recordName = fmt.Sprintf("%s_record.mpeg", time.Now().Format("20060102_1504"))
@@ -19,6 +19,7 @@ type config struct {
 	portStream   string
 	portWS       string
 	secretStream string
+	record       bool
 	printHelp    bool
 }
 
@@ -30,7 +31,7 @@ func main() {
 		return
 	}
 
-	RunRelayServer(config.portStream, config.portWS, config.secretStream)
+	RunRelayServer(config.portStream, config.portWS, config.secretStream, config.record)
 
 	fmt.Println("Relay started, hit Enter-key to close")
 	fmt.Scanln()
@@ -40,7 +41,7 @@ func main() {
 // RunRelayServer starts the relayserver.
 // Listen for single incoming stream on: localhost:portStream/streamPassword.
 // Listen for websockets on: localhost:portWS
-func RunRelayServer(portStream string, portWS string, streamPassword string) {
+func RunRelayServer(portStream string, portWS string, streamPassword string, recordToFile bool) {
 	stream := waitForStream(portStream, streamPassword)
 	if recordToFile {
 		fmt.Println("Recording stream to " + recordName)
@@ -58,12 +59,14 @@ func readCmdArguments() config {
 	portStream := flag.String("port-stream", defaultPortStream, "Port to listen for stream")
 	portWS := flag.String("port-ws", defaultPortWS, "Port to listen for websockets")
 	secretStream := flag.String("s", "", "Secure stream with this password")
+	record := flag.Bool("record", defaultRecordToFile, "Record received stream to local file")
 
 	flag.Parse()
 
 	return config{
 		portStream:   normalizePort(*portStream),
 		portWS:       normalizePort(*portWS),
+		record:       *record,
 		secretStream: *secretStream,
 		printHelp:    *help,
 	}
