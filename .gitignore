@@ -2,3 +2,4 @@ go-relayserver.exe
 *.mpeg
 debug
 debug.test
+.vscode
