@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"testing"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 // assert fails the test if the condition is false.
@@ -58,4 +60,9 @@ func sendData(port string, secret string, data string) error {
 func timeTrack(t *testing.T, start time.Time, name string) {
 	elapsed := time.Since(start)
 	t.Logf("%s took %s", name, elapsed)
+}
+
+func connectClient(port string) (*websocket.Conn, error) {
+	c, _, err := websocket.DefaultDialer.Dial("ws://localhost"+port, nil)
+	return c, err
 }

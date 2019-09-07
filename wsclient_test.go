@@ -2,14 +2,7 @@ package main
 
 import (
 	"testing"
-
-	"github.com/gorilla/websocket"
 )
-
-func connectClient(port string) (*websocket.Conn, error) {
-	c, _, err := websocket.DefaultDialer.Dial("ws://localhost"+port, nil)
-	return c, err
-}
 
 func TestWaitForWSClients(t *testing.T) {
 	// arrange
@@ -23,5 +16,5 @@ func TestWaitForWSClients(t *testing.T) {
 	firstClient := <-clients
 
 	// verify
-	equals(t, true, firstClient != nil)
+	assert(t, firstClient != nil, "Connected client is nil")
 }

@@ -37,5 +37,5 @@ func TestRecordStream(t *testing.T) {
 	// verify
 	ok(t, err)
 	recorded, _ := os.Stat("testdata/recorded-sample.txt")
-	equals(t, true, recorded.Size() > 0)
+	assert(t, recorded.Size() > 0, "Size of recorded data is 0")
 }
