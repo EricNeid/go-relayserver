@@ -3,8 +3,6 @@ package main
 import (
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestRelayStreamToWSClients(t *testing.T) {
@@ -12,9 +10,7 @@ func TestRelayStreamToWSClients(t *testing.T) {
 	stream := waitForStream(":8993", "test")
 	clients := waitForWSClients(":8994")
 	con, err := connectClient(":8994")
-	if err != nil {
-		assert.Fail(t, "Error while creating client connection")
-	}
+	ok(t, err)
 	defer con.Close()
 	go func() {
 		for {
@@ -33,5 +29,5 @@ func TestRelayStreamToWSClients(t *testing.T) {
 	timeTrack(t, start, "TestRelayStreamToWSClients: Sending data")
 
 	// verify
-	assert.NoError(t, err)
+	ok(t, err)
 }

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/assert"
 )
 
 func connectClient(port string) (*websocket.Conn, error) {
@@ -17,14 +16,12 @@ func TestWaitForWSClients(t *testing.T) {
 	clients := waitForWSClients(":8992")
 
 	con, err := connectClient(":8992")
-	if err != nil {
-		assert.Fail(t, "Error while creating client connection")
-	}
+	ok(t, err)
 	defer con.Close()
 
 	// action
 	firstClient := <-clients
 
 	// verify
-	assert.NotNil(t, firstClient)
+	equals(t, true, firstClient != nil)
 }
