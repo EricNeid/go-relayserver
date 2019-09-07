@@ -21,7 +21,7 @@ func TestNormalizePort_shouldChangeNothing(t *testing.T) {
 
 func TestRunRelayServer(t *testing.T) {
 	// arrange
-	RunRelayServer(":8995", ":8996", "test")
+	RunRelayServer(":8995", ":8996", "test", false)
 
 	con, err := connectClient(":8996")
 	ok(t, err)
