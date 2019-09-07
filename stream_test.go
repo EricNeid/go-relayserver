@@ -1,34 +1,34 @@
 package main
 
 import (
+	"bytes"
+	"net/http"
 	"os"
-	"os/exec"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func startSendingSampleStream(port string) error {
-	streamSender := exec.Command("ffmpeg",
-		"-i", "testdata/sample.mp4",
-		"-f", "mpegts",
-		"-codec:v", "mpeg1video",
-		"-s", "1280x720",
-		"-rtbufsize", "2048M",
-		"-r", "30",
-		"-b:v", "3000k",
-		"-q:v", "6",
-		"http://localhost"+port+"/test")
-
-	_, err := streamSender.Output()
-	return err
+func sendData(port string, secret string, data string) error {
+	url := "http://localhost" + port + "/" + secret
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(data)))
+	if err != nil {
+		return err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
 }
 
 func TestWaitForStream(t *testing.T) {
 	// arrange
 	stream := waitForStream(":8990", "test")
 	go func() {
-		err := startSendingSampleStream(":8990")
+		err := sendData(":8990", "test", "Hallo, Welt")
 		if err != nil {
 			assert.Fail(t, "Error while sending stream")
 		}
@@ -43,20 +43,20 @@ func TestWaitForStream(t *testing.T) {
 
 func TestRecordStream(t *testing.T) {
 	// arrange
-	os.Remove("testdata/recorded-sample.mpeg")
+	os.Remove("testdata/recorded-sample.txt")
 	stream := waitForStream(":8991", "test")
 	go func() {
-		streamRecorded := recordStream(stream, "testdata/recorded-sample.mpeg")
+		streamRecorded := recordStream(stream, "testdata/recorded-sample.txt")
 		for {
 			<-streamRecorded
 		}
 	}()
 
 	// action
-	err := startSendingSampleStream(":8991")
+	err := sendData(":8991", "test", "Hallo, Welt")
 
 	// verify
 	assert.NoError(t, err)
-	recorded, _ := os.Stat("testdata/recorded-sample.mpeg")
+	recorded, _ := os.Stat("testdata/recorded-sample.txt")
 	assert.NotEmpty(t, recorded.Size())
 }

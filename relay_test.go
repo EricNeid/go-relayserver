@@ -29,7 +29,7 @@ func TestRelayStreamToWSClients(t *testing.T) {
 
 	// action
 	start := time.Now()
-	err = startSendingSampleStream(":8993")
+	err = sendData(":8993", "test", "Hallo, Welt")
 	timeTrack(t, start, "TestRelayStreamToWSClients: Sending data")
 
 	// verify

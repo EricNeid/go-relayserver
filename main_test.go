@@ -41,7 +41,7 @@ func TestRunRelayServer(t *testing.T) {
 
 	// action
 	start := time.Now()
-	err = startSendingSampleStream(":8995")
+	err = sendData(":8995", "test", "Hallo, Welt")
 	timeTrack(t, start, "TestRunRelayServer: Sending data")
 
 	// verify
