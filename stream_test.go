@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -36,6 +37,7 @@ func TestRecordStream(t *testing.T) {
 
 	// verify
 	ok(t, err)
-	recorded, _ := os.Stat("testdata/recorded-sample.txt")
-	assert(t, recorded.Size() > 0, "Size of recorded data is 0")
+	recorded, err := ioutil.ReadFile("testdata/recorded-sample.txt")
+	ok(t, err)
+	equals(t, "Hallo, Welt", string(recorded))
 }
