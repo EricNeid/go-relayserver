@@ -9,6 +9,7 @@ import (
 
 const defaultPortStream = ":8000"
 const defaultPortWS = ":9000"
+const defaultSecret = "secret1234"
 const defaultRecordToFile = false
 
 const bufferSize = 8 * 1000 * 1024 // 8MB
@@ -33,9 +34,11 @@ func main() {
 
 	RunRelayServer(config.portStream, config.portWS, config.secretStream, config.record)
 
-	fmt.Println("Relay started, hit Enter-key to close")
-	fmt.Scanln()
-	fmt.Println("Shuting down...")
+	for {
+	}
+	//fmt.Println("Relay started, hit Enter-key to close")
+	//fmt.Scanln()
+	//fmt.Println("Shuting down...")
 }
 
 // RunRelayServer starts the relayserver.
@@ -58,7 +61,7 @@ func readCmdArguments() config {
 
 	portStream := flag.String("port-stream", defaultPortStream, "Port to listen for stream")
 	portWS := flag.String("port-ws", defaultPortWS, "Port to listen for websockets")
-	secretStream := flag.String("s", "", "Secure stream with this password")
+	secretStream := flag.String("s", defaultSecret, "Secure stream with this password")
 	record := flag.Bool("record", defaultRecordToFile, "Record received stream to local file")
 
 	flag.Parse()
