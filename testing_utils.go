@@ -63,6 +63,7 @@ func timeTrack(t *testing.T, start time.Time, name string) {
 }
 
 func connectClient(port string) (*websocket.Conn, error) {
-	c, _, err := websocket.DefaultDialer.Dial("ws://localhost"+port, nil)
+	url := "ws://localhost" + port
+	c, _, err := websocket.DefaultDialer.Dial(url, nil)
 	return c, err
 }
