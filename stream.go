@@ -9,7 +9,7 @@ import (
 )
 
 func waitForStream(port string, secret string) <-chan *[]byte {
-	log.Println("Listening for incoming stream on " + port)
+	log.Printf("Listening for incoming stream on %s/%s\n", port, secret)
 
 	stream := make(chan *[]byte)
 	go func() {
