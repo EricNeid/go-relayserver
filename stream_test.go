@@ -6,19 +6,29 @@ import (
 	"testing"
 )
 
-func TestWaitForStream(t *testing.T) {
+func TestWaitForStream_receiveSingleStream(t *testing.T) {
 	// arrange
 	stream := waitForStream(":8990", "test")
+
+	// action
 	go func() {
 		err := sendData(":8990", "test", "Hallo, Welt")
 		ok(t, err)
 	}()
 
-	// action
-	firstChunk := <-stream
-
 	// verify
-	equals(t, true, firstChunk != nil)
+	received := <-stream
+	assert(t, received != nil, "Received data is null")
+	equals(t, "Hallo, Welt", string(*received))
+
+	// action
+	go func() {
+		err := sendData(":8990", "test", "Hallo, Welt 2")
+		ok(t, err)
+	}()
+	received = <-stream
+	assert(t, received != nil, "Received data is null")
+	equals(t, "Hallo, Welt 2", string(*received))
 }
 
 func TestRecordStream(t *testing.T) {
