@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -29,8 +30,8 @@ type config struct {
 func main() {
 	config := readCmdArguments()
 	if config.printHelp {
-		fmt.Println("Usage: ")
-		fmt.Println("go-relayserver.exe optional: -port-stream <port> -port-ws <port> -s <secret>")
+		log.Println("Usage: ")
+		log.Println("go-relayserver.exe optional: -port-stream <port> -port-ws <port> -s <secret>")
 		return
 	}
 
@@ -40,6 +41,8 @@ func main() {
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, os.Interrupt)
 	<-signalChannel
+
+	log.Println("Shuting down...")
 }
 
 // RunRelayServer starts the relayserver.
@@ -48,8 +51,8 @@ func main() {
 func RunRelayServer(portStream string, portWS string, streamPassword string, recordToFile bool) {
 	stream := waitForStream(portStream, streamPassword)
 	if recordToFile {
-		fmt.Println("Recording stream to " + recordName)
-		fmt.Println("Warning: Recording stream may decrease performance and should be used for testing only")
+		log.Println("Recording stream to " + recordName)
+		log.Println("Warning: Recording stream may decrease performance and should be used for testing only")
 		stream = recordStream(stream, recordName)
 	}
 
