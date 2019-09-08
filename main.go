@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-const defaultPortStream = ":8081"
-const defaultPortWS = ":8082"
+const defaultPortStream = ":8000"
+const defaultPortWS = ":9000"
 const defaultRecordToFile = false
 
 const bufferSize = 8 * 1000 * 1024 // 8MB
