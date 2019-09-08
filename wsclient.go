@@ -36,6 +36,7 @@ func waitForWSClients(port string) <-chan *wsClient {
 				log.Println(err)
 				return
 			}
+			log.Println("WS client connected: " + ws.RemoteAddr().String())
 			connectedClients <- &wsClient{
 				remoteAddress: ws.RemoteAddr().String(),
 				writeStream:   writeToConnection(ws),
@@ -69,6 +70,7 @@ func monitorConnection(conn *websocket.Conn) <-chan bool {
 	go func() {
 		for {
 			if _, _, err := conn.ReadMessage(); err != nil {
+				log.Println("WS client disconnected: " + conn.RemoteAddr().String())
 				isClosed <- true
 				conn.Close()
 				break
