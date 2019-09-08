@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
 	"strings"
 	"time"
 )
@@ -34,11 +36,10 @@ func main() {
 
 	RunRelayServer(config.portStream, config.portWS, config.secretStream, config.record)
 
-	for {
-	}
-	//fmt.Println("Relay started, hit Enter-key to close")
-	//fmt.Scanln()
-	//fmt.Println("Shuting down...")
+	// wait for interrupt to shutdown
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, os.Interrupt)
+	<-signalChannel
 }
 
 // RunRelayServer starts the relayserver.
