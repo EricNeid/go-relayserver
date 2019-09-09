@@ -6,7 +6,11 @@ RUN apk update && apk add git
 
 # Create appuser
 RUN adduser -D -g '' appuser
-COPY . /app
+
+# Copy app
+COPY *.go /app/
+COPY go.mod /app
+COPY go.sum /app
 WORKDIR /app
 
 # build the binary, make sure that it is linked static
