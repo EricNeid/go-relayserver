@@ -12,8 +12,7 @@ func waitForStream(port string, secret string, done <-chan bool) <-chan *[]byte 
 	log.Printf("Listening for incoming stream on %s/%s\n", port, secret)
 
 	stream := make(chan *[]byte)
-	streamReader := http.NewServeMux()
-	streamReader.HandleFunc("/"+secret, func(w http.ResponseWriter, r *http.Request) {
+	streamReceiver := func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Stream client connected: " + r.RemoteAddr)
 
 		input := r.Body
@@ -46,7 +45,9 @@ func waitForStream(port string, secret string, done <-chan bool) <-chan *[]byte 
 				break
 			}
 		}
-	})
+	}
+	streamReader := http.NewServeMux()
+	streamReader.HandleFunc("/"+secret, streamReceiver)
 	go func() {
 		http.ListenAndServe(port, streamReader)
 	}()
