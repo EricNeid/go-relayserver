@@ -7,7 +7,7 @@ import (
 
 func TestRelayStreamToWSClients(t *testing.T) {
 	// arrange
-	done := make(chan bool)
+	done := make(chan bool, 1)
 	stream := waitForStream(":8993", "test", done)
 	clients := waitForWSClients(":8994")
 	con, err := connectClient(":8994")
