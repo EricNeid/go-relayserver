@@ -3,3 +3,4 @@ go-relayserver.exe
 debug
 debug.test
 .vscode
+testdata/recorded-sample.txt

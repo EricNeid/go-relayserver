@@ -28,6 +28,7 @@ type config struct {
 }
 
 func main() {
+	// read arguments from cli
 	config := readCmdArguments()
 	if config.printHelp {
 		log.Println("Usage: ")
@@ -35,7 +36,16 @@ func main() {
 		return
 	}
 
-	RunRelayServer(config.portStream, config.portWS, config.secretStream, config.record)
+	// start listening
+	done := make(chan bool)
+	stream := waitForStream(config.portStream, config.secretStream, done)
+	if config.record {
+		log.Println("Recording stream to " + recordName)
+		log.Println("Warning: Recording stream may decrease performance and should be used for testing only")
+		stream = recordStream(stream, recordName)
+	}
+	clients := waitForWSClients(config.portWS)
+	relayStreamToWSClients(stream, clients)
 
 	// wait for interrupt to shutdown
 	signalChannel := make(chan os.Signal, 1)
@@ -43,21 +53,7 @@ func main() {
 	<-signalChannel
 
 	log.Println("Shuting down...")
-}
-
-// RunRelayServer starts the relayserver.
-// Listen for single incoming stream on: localhost:portStream/streamPassword.
-// Listen for websockets on: localhost:portWS
-func RunRelayServer(portStream string, portWS string, streamPassword string, recordToFile bool) {
-	stream := waitForStream(portStream, streamPassword)
-	if recordToFile {
-		log.Println("Recording stream to " + recordName)
-		log.Println("Warning: Recording stream may decrease performance and should be used for testing only")
-		stream = recordStream(stream, recordName)
-	}
-
-	clients := waitForWSClients(portWS)
-	relayStreamToWSClients(stream, clients)
+	done <- true
 }
 
 func readCmdArguments() config {

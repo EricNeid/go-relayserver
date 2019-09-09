@@ -1,14 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 )
 
-func waitForStream(port string, secret string) <-chan *[]byte {
+func waitForStream(port string, secret string, done <-chan bool) <-chan *[]byte {
 	log.Printf("Listening for incoming stream on %s/%s\n", port, secret)
 
 	stream := make(chan *[]byte)
@@ -23,20 +22,30 @@ func waitForStream(port string, secret string) <-chan *[]byte {
 			// read from input until EOF
 			buffer := make([]byte, bufferSize)
 			for {
-				n, err := input.Read(buffer[:cap(buffer)])
-				if n == 0 {
-					if err == nil {
-						continue
-					}
-					if err == io.EOF {
-						break
-					}
-					fmt.Println(err.Error())
+				var readCount int
+				var err error
+
+				select {
+				case <-done:
+					log.Println("Stop waiting for input stream")
+					return
+				default:
+					readCount, err = input.Read(buffer[:cap(buffer)])
 				}
-				chunk := buffer[:n]
-				stream <- &chunk
+
+				if readCount > 0 {
+					chunk := buffer[:readCount]
+					stream <- &chunk
+				}
+
+				if err == io.EOF {
+					log.Println("Stream EOF reached")
+					break
+				} else {
+					log.Printf("Error while reading from stream: %s\n", err.Error())
+					break
+				}
 			}
-			log.Println("Stream client disconnected")
 		})
 		http.ListenAndServe(port, streamReader)
 	}()
