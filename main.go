@@ -37,7 +37,7 @@ func main() {
 	}
 
 	// start listening
-	done := make(chan bool)
+	done := make(chan bool, 1)
 	stream := waitForStream(config.portStream, config.secretStream, done)
 	if config.record {
 		log.Println("Recording stream to " + recordName)
