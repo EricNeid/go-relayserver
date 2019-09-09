@@ -42,7 +42,7 @@ func main() {
 	if config.record {
 		log.Println("Recording stream to " + recordName)
 		log.Println("Warning: Recording stream may decrease performance and should be used for testing only")
-		stream = recordStream(stream, recordName)
+		stream = recordStream(stream, "recorded", recordName)
 	}
 	clients := waitForWSClients(config.portWS)
 	relayStreamToWSClients(stream, clients)

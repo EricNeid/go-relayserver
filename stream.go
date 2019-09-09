@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 func waitForStream(port string, secret string, done <-chan bool) <-chan *[]byte {
@@ -54,9 +55,10 @@ func waitForStream(port string, secret string, done <-chan bool) <-chan *[]byte 
 
 // recordStream write the given stream to file. It returns the stream for further uses
 // and is not blocking the channel.
-func recordStream(stream <-chan *[]byte, recordName string) <-chan *[]byte {
+func recordStream(stream <-chan *[]byte, path string, file string) <-chan *[]byte {
 	c := make(chan *[]byte)
-	f, err := os.Create(recordName)
+	os.MkdirAll(path, os.ModePerm)
+	f, err := os.Create(filepath.Join(path, file))
 	if err != nil {
 		log.Println(err.Error())
 		return stream

@@ -43,7 +43,7 @@ func TestRecordStream(t *testing.T) {
 	os.Remove("testdata/recorded-sample.txt")
 	stream := waitForStream(":8991", "test", done)
 	go func() {
-		streamRecorded := recordStream(stream, "testdata/recorded-sample.txt")
+		streamRecorded := recordStream(stream, "testdata", "recorded-sample.txt")
 		for {
 			<-streamRecorded
 		}
