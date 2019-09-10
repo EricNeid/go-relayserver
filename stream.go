@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 )
 
-func waitForStream(port string, secret string, done <-chan bool) <-chan *[]byte {
+func waitForStream(port string, secret string, done <-chan bool) (*http.Server, <-chan *[]byte) {
 	log.Printf("Listening for incoming stream on %s/%s\n", port, secret)
 
 	stream := make(chan *[]byte)
-	streamReceiver := func(w http.ResponseWriter, r *http.Request) {
+	streamHandleFunc := func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Stream client connected: " + r.RemoteAddr)
 
 		input := r.Body
@@ -46,12 +46,14 @@ func waitForStream(port string, secret string, done <-chan bool) <-chan *[]byte 
 			}
 		}
 	}
-	streamReader := http.NewServeMux()
-	streamReader.HandleFunc("/"+secret, streamReceiver)
+	streamHandler := http.NewServeMux()
+	streamHandler.HandleFunc("/"+secret, streamHandleFunc)
+	streamServer := &http.Server{Addr: port, Handler: streamHandler}
 	go func() {
-		http.ListenAndServe(port, streamReader)
+		streamServer.ListenAndServe()
 	}()
-	return stream
+
+	return streamServer, stream
 }
 
 // recordStream write the given stream to file. It returns the stream for further uses

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -9,7 +10,7 @@ import (
 func TestWaitForStream(t *testing.T) {
 	// arrange
 	done := make(chan bool, 1)
-	stream := waitForStream(":8990", "test", done)
+	server, stream := waitForStream(":8990", "test", done)
 
 	// action
 	go func() {
@@ -35,13 +36,14 @@ func TestWaitForStream(t *testing.T) {
 
 	// cleanup
 	done <- true
+	server.Shutdown(context.Background())
 }
 
 func TestRecordStream(t *testing.T) {
 	// arrange
 	done := make(chan bool, 1)
 	os.Remove("testdata/recorded-sample.txt")
-	stream := waitForStream(":8991", "test", done)
+	server, stream := waitForStream(":8990", "test", done)
 	go func() {
 		streamRecorded := recordStream(stream, "testdata", "recorded-sample.txt")
 		for {
@@ -50,7 +52,7 @@ func TestRecordStream(t *testing.T) {
 	}()
 
 	// action
-	err := sendData(":8991", "test", "Hallo, Welt")
+	err := sendData(":8990", "test", "Hallo, Welt")
 
 	// verify
 	ok(t, err)
@@ -59,5 +61,6 @@ func TestRecordStream(t *testing.T) {
 	equals(t, "Hallo, Welt", string(recorded))
 
 	// cleanup
+	server.Shutdown(context.Background())
 	done <- true
 }

@@ -38,7 +38,7 @@ func main() {
 
 	// start listening
 	done := make(chan bool, 1)
-	stream := waitForStream(config.portStream, config.secretStream, done)
+	_, stream := waitForStream(config.portStream, config.secretStream, done)
 	if config.record {
 		log.Println("Recording stream to " + recordName)
 		log.Println("Warning: Recording stream may decrease performance and should be used for testing only")
