@@ -36,16 +36,18 @@ func main() {
 		return
 	}
 
-	// start listening
-	done := make(chan bool, 1)
-	_, stream := waitForStream(config.portStream, config.secretStream, done)
-	if config.record {
-		log.Println("Recording stream to " + recordName)
-		log.Println("Warning: Recording stream may decrease performance and should be used for testing only")
-		stream = recordStream(stream, "recorded", recordName)
-	}
-	clients := waitForWSClients(config.portWS)
-	relayStreamToWSClients(stream, clients)
+	/*
+		// start listening
+		done := make(chan bool, 1)
+		_, stream := waitForStream(config.portStream, config.secretStream, done)
+		if config.record {
+			log.Println("Recording stream to " + recordName)
+			log.Println("Warning: Recording stream may decrease performance and should be used for testing only")
+			stream = recordStream(stream, "recorded", recordName)
+		}
+		clients := waitForWSClients(config.portWS)
+		relayStreamToWSClients(stream, clients)
+	*/
 
 	// wait for interrupt to shutdown
 	signalChannel := make(chan os.Signal, 1)
@@ -53,7 +55,7 @@ func main() {
 	<-signalChannel
 
 	log.Println("Shuting down...")
-	done <- true
+	// TODO cleanup
 }
 
 func readCmdArguments() config {
