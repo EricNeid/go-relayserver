@@ -16,21 +16,23 @@ type streamServer struct {
 	router            *http.ServeMux
 	isStreamConnected chan bool
 	inputStream       chan *[]byte
-	done              <-chan bool
+	done              chan bool
+	secret            string
 }
 
-func newStreamServer(port string) *streamServer {
+func newStreamServer(secret string) *streamServer {
 	router := http.NewServeMux()
 
 	return &streamServer{
 		router:            router,
 		isStreamConnected: make(chan bool, 1),
 		inputStream:       make(chan *[]byte),
+		secret:            secret,
 	}
 }
 
-func (s *streamServer) routes(secret string) {
-	s.router.HandleFunc("/"+secret, s.log(s.handleStream))
+func (s *streamServer) routes() {
+	s.router.HandleFunc("/stream/"+s.secret, s.log(s.handleStream))
 }
 
 func (s *streamServer) handleStream(w http.ResponseWriter, r *http.Request) {

@@ -1,7 +1,31 @@
 package main
 
+import (
+	"net/http"
+	"testing"
+)
 
+func TestHandleStream(t *testing.T) {
+	// arrange
+	unit := newStreamServer("test")
+	unit.routes()
+	s := http.Server{Addr: ":8080", Handler: unit.router}
+	go func() {
+		s.ListenAndServe()
+	}()
 
+	// action
+	go func() {
+		err := sendData(":8080", "test", "Hallo, Welt")
+		ok(t, err)
+	}()
+
+	// verify
+	<-unit.inputStream
+	//unit.done <- true
+	//s.Shutdown(context.Background())
+	//equals(t, "Hallo, Welt", string(*<-unit.inputStream))
+}
 
 /*
 func TestWaitForStream(t *testing.T) {

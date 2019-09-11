@@ -42,7 +42,7 @@ func equals(t *testing.T, exp, act interface{}) {
 
 // sendData sends test data to localhost with given port and secret.
 func sendData(port string, secret string, data string) error {
-	url := "http://localhost" + port + "/" + secret
+	url := "http://localhost" + port + "/stream/" + secret
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(data)))
 	if err != nil {
 		return err
