@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -12,23 +13,41 @@ import (
 
 const timeFormat string = "Mon Jan 2 15:04:05 2006"
 
+// streamServer represents a server, ready to access a single input stream.
+// To create a new instance use s := newStreamServer(":8080", "MySecret")
+// Before using the server, you need to call s.routes() to configure the routes.
+// To shutdown the server use s.shutdown()
 type streamServer struct {
+	server            *http.Server
 	router            *http.ServeMux
 	isStreamConnected chan bool
 	inputStream       chan *[]byte
-	done              chan bool
+	done              bool
 	secret            string
 }
 
-func newStreamServer(secret string) *streamServer {
+func newStreamServer(port string, secret string) *streamServer {
 	router := http.NewServeMux()
+	server := &http.Server{Addr: port, Handler: router}
 
 	return &streamServer{
+		server:            server,
 		router:            router,
 		isStreamConnected: make(chan bool, 1),
 		inputStream:       make(chan *[]byte),
+		done:              false,
 		secret:            secret,
 	}
+}
+
+func (s *streamServer) listenAndServe() {
+	s.done = false
+	s.server.ListenAndServe()
+}
+
+func (s *streamServer) shutdown() {
+	s.done = true
+	s.server.Shutdown(context.Background())
 }
 
 func (s *streamServer) routes() {
@@ -42,23 +61,11 @@ func (s *streamServer) handleStream(w http.ResponseWriter, r *http.Request) {
 	defer input.Close()
 
 	buffer := make([]byte, bufferSize)
-	for {
+	for !s.done {
 		var readCount int
 		var err error
 
-		isDone := false
-
-		select {
-		case <-s.done:
-			isDone = true
-		default:
-			readCount, err = input.Read(buffer[:cap(buffer)])
-		}
-
-		if isDone {
-			log.Println("Stop waiting for input stream")
-			break
-		}
+		readCount, err = input.Read(buffer[:cap(buffer)])
 
 		if readCount > 0 {
 			chunk := buffer[:readCount]
@@ -73,6 +80,7 @@ func (s *streamServer) handleStream(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+	log.Println("Stop waiting for input stream")
 	<-s.isStreamConnected
 }
 

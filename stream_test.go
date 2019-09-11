@@ -1,17 +1,15 @@
 package main
 
 import (
-	"net/http"
 	"testing"
 )
 
 func TestHandleStream(t *testing.T) {
 	// arrange
-	unit := newStreamServer("test")
+	unit := newStreamServer(":8080", "test")
 	unit.routes()
-	s := http.Server{Addr: ":8080", Handler: unit.router}
 	go func() {
-		s.ListenAndServe()
+		unit.listenAndServe()
 	}()
 
 	// action
@@ -21,12 +19,67 @@ func TestHandleStream(t *testing.T) {
 	}()
 
 	// verify
-	<-unit.inputStream
-	//unit.done <- true
-	//s.Shutdown(context.Background())
-	//equals(t, "Hallo, Welt", string(*<-unit.inputStream))
+	received := string(*<-unit.inputStream)
+	equals(t, "Hallo, Welt", received)
+
+	// cleanup
+	unit.shutdown()
 }
 
+func TestHandleStream_twoStreams(t *testing.T) {
+	// arrange
+	unit := newStreamServer(":8080", "test")
+	unit.routes()
+	go func() {
+		unit.listenAndServe()
+	}()
+
+	// action
+	go func() {
+		err := sendData(":8080", "test", "Hallo, Welt")
+		ok(t, err)
+	}()
+
+	// verify
+	received := string(*<-unit.inputStream)
+	equals(t, "Hallo, Welt", received)
+
+	// action 2
+	go func() {
+		err := sendData(":8080", "test", "Was gibt's?")
+		ok(t, err)
+	}()
+
+	// verify 2
+	received = string(*<-unit.inputStream)
+	equals(t, "Was gibt's?", received)
+
+	// cleanup
+	unit.shutdown()
+}
+
+/*
+func TestHandleStream_interruptStream(t *testing.T) {
+	// arrange
+	largeFile, _ := ioutil.ReadFile("testdata/sample-data.txt")
+	unit := newStreamServer(":8080", "test")
+	unit.routes()
+	go func() {
+		unit.listenAndServe()
+	}()
+	go func() {
+		err := sendData(":8080", "test", string(largeFile)+string(largeFile)+string(largeFile))
+		ok(t, err)
+	}()
+
+	// action
+	received := string(*<-unit.inputStream)
+	unit.shutdown()
+
+	// verify
+	equals(t, "Hallo, Welt", received)
+}
+*/
 /*
 func TestWaitForStream(t *testing.T) {
 	// arrange
