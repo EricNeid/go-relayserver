@@ -26,7 +26,7 @@ func TestHandleStream(t *testing.T) {
 	unit.shutdown()
 }
 
-func TestHandleStream_twoStreams(t *testing.T) {
+func TestHandleStream_twoStreamsSequential(t *testing.T) {
 	// arrange
 	unit := newStreamServer(":8080", "test")
 	unit.routes()
@@ -53,6 +53,34 @@ func TestHandleStream_twoStreams(t *testing.T) {
 	// verify 2
 	received = string(*<-unit.inputStream)
 	equals(t, "Was gibt's?", received)
+
+	// cleanup
+	unit.shutdown()
+}
+
+func TestHandleStream_twoStreamsParallel(t *testing.T) {
+	// arrange
+	unit := newStreamServer(":8080", "test")
+	unit.routes()
+	go func() {
+		unit.listenAndServe()
+	}()
+
+	// action
+	go func() {
+		err := sendData(":8080", "test", "test-stream-1")
+		ok(t, err)
+	}()
+	go func() {
+		err := sendData(":8080", "test", "test-stream-2")
+		ok(t, err)
+	}()
+
+	// verify
+	received := string(*<-unit.inputStream)
+	equals(t, "test-stream-1", received)
+	received2 := string(*<-unit.inputStream)
+	equals(t, "test-stream-2", received2)
 
 	// cleanup
 	unit.shutdown()

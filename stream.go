@@ -46,7 +46,8 @@ func (s *streamServer) listenAndServe() {
 }
 
 func (s *streamServer) shutdown() {
-	s.done = true
+	s.done = true                       // signal handleStream to finish reading
+	time.Sleep(1000 * time.Millisecond) // give handleStream time to settle
 	s.server.Shutdown(context.Background())
 }
 
