@@ -40,6 +40,10 @@ func newStreamServer(port string, secret string) *streamServer {
 	}
 }
 
+func (s *streamServer) routes() {
+	s.router.HandleFunc("/stream/"+s.secret, s.log(s.handleStream))
+}
+
 func (s *streamServer) listenAndServe() {
 	s.done = false
 	s.server.ListenAndServe()
@@ -49,10 +53,6 @@ func (s *streamServer) shutdown() {
 	s.done = true                       // signal handleStream to finish reading
 	time.Sleep(1000 * time.Millisecond) // give handleStream time to settle
 	s.server.Shutdown(context.Background())
-}
-
-func (s *streamServer) routes() {
-	s.router.HandleFunc("/stream/"+s.secret, s.log(s.handleStream))
 }
 
 func (s *streamServer) handleStream(w http.ResponseWriter, r *http.Request) {
@@ -93,8 +93,7 @@ func (s *streamServer) log(fn http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// recordStream write the given stream to file. It returns the stream for further uses
-// and is not blocking the channel.
+// recordStream write the given stream to file. It returns the stream for further uses.
 func recordStream(stream <-chan *[]byte, path string, file string) <-chan *[]byte {
 	c := make(chan *[]byte)
 	os.MkdirAll(path, os.ModePerm)
