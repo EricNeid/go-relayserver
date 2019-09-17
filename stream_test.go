@@ -86,28 +86,29 @@ func TestHandleStream_twoStreamsParallel(t *testing.T) {
 	unit.shutdown()
 }
 
-/*
 func TestHandleStream_interruptStream(t *testing.T) {
 	// arrange
-	largeFile, _ := ioutil.ReadFile("testdata/sample-data.txt")
 	unit := newStreamServer(":8080", "test")
 	unit.routes()
 	go func() {
 		unit.listenAndServe()
 	}()
 	go func() {
-		err := sendData(":8080", "test", string(largeFile)+string(largeFile)+string(largeFile))
-		ok(t, err)
+		sendVideo(":8080")
+	//	ok(t, err)
 	}()
 
 	// action
-	received := string(*<-unit.inputStream)
+	received := *<-unit.inputStream
+	go func() {
+		<-unit.inputStream
+	}()
 	unit.shutdown()
 
 	// verify
-	equals(t, "Hallo, Welt", received)
+	assert(t, len(received) > 0, "Received chunk is empty")
 }
-*/
+
 /*
 func TestWaitForStream(t *testing.T) {
 	// arrange

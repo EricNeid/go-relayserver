@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -54,6 +55,22 @@ func sendData(port string, secret string, data string) error {
 	}
 	defer resp.Body.Close()
 	return nil
+}
+
+func sendVideo(port string) error {
+	streamSender := exec.Command("ffmpeg",
+		"-i", "testdata/sample.mp4",
+		"-f", "mpegts",
+		"-codec:v", "mpeg1video",
+		"-s", "1280x720",
+		"-rtbufsize", "2048M",
+		"-r", "30",
+		"-b:v", "3000k",
+		"-q:v", "6",
+		"http://localhost"+port+"/stream/test")
+
+	_, err := streamSender.Output()
+	return err
 }
 
 // timeTrack prints the elapsed time since start in seconds, together with the given name.
