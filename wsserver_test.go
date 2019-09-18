@@ -17,7 +17,7 @@ func TestHandleClientConnect(t *testing.T) {
 	defer con.Close()
 
 	// action
-	firstClient := <-unit.connectedClients
+	firstClient := <-unit.incomingClients
 
 	// verify
 	assert(t, firstClient != nil, "Connected client is nil")

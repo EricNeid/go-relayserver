@@ -36,6 +36,7 @@ func main() {
 		return
 	}
 
+	// start endpoints for stream and websocket connections
 	streamServer := newStreamServer(config.portStream, config.secretStream)
 	streamServer.routes()
 
@@ -49,19 +50,15 @@ func main() {
 		wsServer.listenAndServe()
 	}()
 
-
-	/*
-		// start listening
-		done := make(chan bool, 1)
-		_, stream := waitForStream(config.portStream, config.secretStream, done)
-		if config.record {
-			log.Println("Recording stream to " + recordName)
-			log.Println("Warning: Recording stream may decrease performance and should be used for testing only")
-			stream = recordStream(stream, "recorded", recordName)
-		}
-		clients := waitForWSClients(config.portWS)
-		relayStreamToWSClients(stream, clients)
-	*/
+	var stream <-chan *[]byte
+	stream = streamServer.inputStream
+	clients := wsServer.incomingClients
+	if config.record {
+		log.Println("Recording stream to " + recordName)
+		log.Println("Warning: Recording stream may decrease performance and should be used for testing only")
+		stream = recordStream(stream, "recorded", recordName)
+	}
+	relayStreamToWSClients(stream, clients)
 
 	// wait for interrupt to shutdown
 	signalChannel := make(chan os.Signal, 1)

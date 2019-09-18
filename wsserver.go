@@ -11,12 +11,12 @@ import (
 
 // wsServer waits for websocket clients to connect.
 type wsServer struct {
-	server           *http.Server
-	router           *http.ServeMux
-	upgrader         websocket.Upgrader
-	connectedClients chan *wsClient
-	done             bool
-	port             string
+	server          *http.Server
+	router          *http.ServeMux
+	upgrader        websocket.Upgrader
+	incomingClients chan *wsClient
+	done            bool
+	port            string
 }
 
 func newWebSocketServer(port string) *wsServer {
@@ -32,17 +32,17 @@ func newWebSocketServer(port string) *wsServer {
 	}
 
 	return &wsServer{
-		server:           server,
-		router:           router,
-		upgrader:         upgrader,
-		connectedClients: make(chan *wsClient),
-		done:             false,
-		port:             port,
+		server:          server,
+		router:          router,
+		upgrader:        upgrader,
+		incomingClients: make(chan *wsClient),
+		done:            false,
+		port:            port,
 	}
 }
 
 func (s *wsServer) routes() {
-	log.Printf("Start receiving streams on: &/clients\n", s.port)
+	log.Printf("Start receiving streams on: %s/clients\n", s.port)
 	s.router.HandleFunc("/clients", logRequest(s.handleClientConnect))
 }
 
@@ -64,7 +64,7 @@ func (s *wsServer) handleClientConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println("WS client connected: " + ws.RemoteAddr().String())
-	s.connectedClients <- &wsClient{
+	s.incomingClients <- &wsClient{
 		remoteAddress: ws.RemoteAddr().String(),
 		writeStream:   writeToConnection(ws),
 		isClosed:      monitorConnection(ws),
