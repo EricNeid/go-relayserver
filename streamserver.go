@@ -23,6 +23,7 @@ type streamServer struct {
 	inputStream       chan *[]byte
 	done              bool
 	secret            string
+	port              string
 }
 
 func newStreamServer(port string, secret string) *streamServer {
@@ -36,10 +37,12 @@ func newStreamServer(port string, secret string) *streamServer {
 		inputStream:       make(chan *[]byte),
 		done:              false,
 		secret:            secret,
+		port:              port,
 	}
 }
 
 func (s *streamServer) routes() {
+	log.Printf("Start receiving streams on: %s/stream/%s\n", s.port, s.secret)
 	s.router.HandleFunc("/stream/"+s.secret, logRequest(s.handleStream))
 }
 

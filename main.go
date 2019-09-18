@@ -36,6 +36,20 @@ func main() {
 		return
 	}
 
+	streamServer := newStreamServer(config.portStream, config.secretStream)
+	streamServer.routes()
+
+	wsServer := newWebSocketServer(config.portWS)
+	wsServer.routes()
+
+	go func() {
+		streamServer.listenAndServe()
+	}()
+	go func() {
+		wsServer.listenAndServe()
+	}()
+
+
 	/*
 		// start listening
 		done := make(chan bool, 1)

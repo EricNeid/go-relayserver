@@ -16,6 +16,7 @@ type wsServer struct {
 	upgrader         websocket.Upgrader
 	connectedClients chan *wsClient
 	done             bool
+	port             string
 }
 
 func newWebSocketServer(port string) *wsServer {
@@ -36,10 +37,12 @@ func newWebSocketServer(port string) *wsServer {
 		upgrader:         upgrader,
 		connectedClients: make(chan *wsClient),
 		done:             false,
+		port:             port,
 	}
 }
 
 func (s *wsServer) routes() {
+	log.Printf("Start receiving streams on: &/clients\n", s.port)
 	s.router.HandleFunc("/clients", logRequest(s.handleClientConnect))
 }
 
