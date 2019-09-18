@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -41,7 +40,7 @@ func newStreamServer(port string, secret string) *streamServer {
 }
 
 func (s *streamServer) routes() {
-	s.router.HandleFunc("/stream/"+s.secret, s.log(s.handleStream))
+	s.router.HandleFunc("/stream/"+s.secret, logRequest(s.handleStream))
 }
 
 func (s *streamServer) listenAndServe() {
@@ -83,14 +82,6 @@ func (s *streamServer) handleStream(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Stop waiting for input stream")
 	<-s.isStreamConnected
-}
-
-func (s *streamServer) log(fn http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		timestamp := time.Now()
-		fmt.Printf("%s - streamServer - %s\n", timestamp.Format(timeFormat), r.URL.Path)
-		fn(w, r)
-	}
 }
 
 // recordStream write the given stream to file. It returns the stream for further uses.
