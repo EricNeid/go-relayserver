@@ -27,11 +27,7 @@ COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /go/bin/server /server
 
 USER appuser
-EXPOSE 8000
-EXPOSE 9000
-
-CMD ["/server"]
-#CMD  ["/server", \
-#    "-port-stream", "8080", \
-#    "-port-ws", "8081", \
-#    "-s", "test"]
+CMD  ["/server", \
+    "-port-stream", "8000", \
+    "-port-ws", "9000", \
+    "-s", "secret1234"]
