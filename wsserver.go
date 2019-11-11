@@ -1,4 +1,4 @@
-package main
+package relay
 
 import (
 	"context"
@@ -9,17 +9,18 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// wsServer waits for websocket clients to connect.
-type wsServer struct {
+// WsServer waits for websocket clients to connect.
+type WsServer struct {
 	server          *http.Server
 	router          *http.ServeMux
 	upgrader        websocket.Upgrader
-	incomingClients chan *wsClient
+	IncomingClients chan *WsClient
+	Port            string
 	done            bool
-	port            string
 }
 
-func newWebSocketServer(port string) *wsServer {
+// NewWebSocketServer creates new server to await websocket connections.
+func NewWebSocketServer(port string) *WsServer {
 	router := http.NewServeMux()
 	server := &http.Server{Addr: port, Handler: router}
 
@@ -31,40 +32,43 @@ func newWebSocketServer(port string) *wsServer {
 		},
 	}
 
-	return &wsServer{
+	return &WsServer{
 		server:          server,
 		router:          router,
 		upgrader:        upgrader,
-		incomingClients: make(chan *wsClient),
+		IncomingClients: make(chan *WsClient),
 		done:            false,
-		port:            port,
+		Port:            port,
 	}
 }
 
-func (s *wsServer) routes() {
-	log.Printf("Start receiving streams on: %s/clients\n", s.port)
+// Routes configures the routes for the given server.
+func (s *WsServer) Routes() {
+	log.Printf("Start receiving streams on: %s/clients\n", s.Port)
 	s.router.HandleFunc("/clients", logRequest(s.handleClientConnect))
 }
 
-func (s *wsServer) listenAndServe() {
+// ListenAndServe starts listening for new websocket connections.
+func (s *WsServer) ListenAndServe() {
 	s.done = false
 	s.server.ListenAndServe()
 }
 
-func (s *wsServer) shutdown() {
+// Shutdown stops the server.
+func (s *WsServer) Shutdown() {
 	s.done = true                       // signal handleStream to finish reading
 	time.Sleep(1000 * time.Millisecond) // give handleStream time to settle
 	s.server.Shutdown(context.Background())
 }
 
-func (s *wsServer) handleClientConnect(w http.ResponseWriter, r *http.Request) {
+func (s *WsServer) handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	ws, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("Error while upgrading connection: %s\n", err.Error())
 		return
 	}
 	log.Println("WS client connected: " + ws.RemoteAddr().String())
-	s.incomingClients <- &wsClient{
+	s.IncomingClients <- &WsClient{
 		remoteAddress: ws.RemoteAddr().String(),
 		writeStream:   writeToConnection(ws),
 		isClosed:      monitorConnection(ws),

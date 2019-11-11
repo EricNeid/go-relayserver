@@ -1,9 +1,9 @@
-package main
+package relay
 
-// relayStreamToWSClients waits for clients to connect and relays the given stream to
+// StreamToWSClients waits for clients to connect and relays the given stream to
 // connected websocket clients. If a client disconnects, it does no longer receives the stream.
-func relayStreamToWSClients(stream <-chan *[]byte, clients <-chan *wsClient) {
-	connectedClients := make(map[*wsClient]bool)
+func StreamToWSClients(stream <-chan *[]byte, clients <-chan *WsClient) {
+	connectedClients := make(map[*WsClient]bool)
 	go func() {
 		for {
 			// wait for clients to connect

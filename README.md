@@ -13,3 +13,7 @@ A simple websocket relay server, written in go. It relays incoming stream to mul
 ```sh
  $ go-relayserver optional: -port-stream <port> -port-ws <port> -s <secret>
 ```
+
+## Testing
+
+Make sure that ffmpeg is in your path. 

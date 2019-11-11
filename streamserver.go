@@ -1,4 +1,4 @@
-package main
+package relay
 
 import (
 	"context"
@@ -10,52 +10,58 @@ import (
 
 const timeFormat string = "Mon Jan 2 15:04:05 2006"
 
-// streamServer represents a server, ready to access a single input stream.
+// StreamServer represents a server, ready to access a single input stream.
 // To create a new instance use s := newStreamServer(":8080", "MySecret")
 // Before using the server, you need to call s.routes() to configure the routes.
 // To shutdown the server use s.shutdown()
-type streamServer struct {
+type StreamServer struct {
 	server            *http.Server
 	router            *http.ServeMux
 	isStreamConnected chan bool
-	inputStream       chan *[]byte
+	InputStream       chan *[]byte
 	done              bool
-	secret            string
-	port              string
+	Secret            string
+	Port              string
 }
 
-func newStreamServer(port string, secret string) *streamServer {
+// NewStreamServer creates new instance of stream server.
+// It is regsitered on the given port and access to stream is protected by
+// given secret.
+func NewStreamServer(port string, secret string) *StreamServer {
 	router := http.NewServeMux()
 	server := &http.Server{Addr: port, Handler: router}
 
-	return &streamServer{
+	return &StreamServer{
 		server:            server,
 		router:            router,
 		isStreamConnected: make(chan bool, 1),
-		inputStream:       make(chan *[]byte),
+		InputStream:       make(chan *[]byte),
+		Secret:            secret,
+		Port:              port,
 		done:              false,
-		secret:            secret,
-		port:              port,
 	}
 }
 
-func (s *streamServer) routes() {
-	log.Printf("Start receiving streams on: %s/stream/%s\n", s.port, s.secret)
-	s.router.HandleFunc("/stream/"+s.secret, logRequest(s.handleStream))
+// Routes registers function handler for this SteamServer.
+func (s *StreamServer) Routes() {
+	log.Printf("Start receiving streams on: %s/stream/%s\n", s.Port, s.Secret)
+	s.router.HandleFunc("/stream/"+s.Secret, logRequest(s.handleStream))
 }
 
-func (s *streamServer) listenAndServe() {
+// ListenAndServe starts listening for new stream.
+func (s *StreamServer) ListenAndServe() {
 	s.done = false
 	s.server.ListenAndServe()
 }
 
-func (s *streamServer) shutdown() {
+// Shutdown stops server.
+func (s *StreamServer) Shutdown() {
 	s.done = true                       // signal handleStream to finish reading
 	time.Sleep(1000 * time.Millisecond) // give handleStream time to settle
 	s.server.Shutdown(context.Background())
 }
 
-func (s *streamServer) handleStream(w http.ResponseWriter, r *http.Request) {
+func (s *StreamServer) handleStream(w http.ResponseWriter, r *http.Request) {
 	s.isStreamConnected <- true
 
 	input := r.Body
@@ -70,7 +76,7 @@ func (s *streamServer) handleStream(w http.ResponseWriter, r *http.Request) {
 
 		if readCount > 0 {
 			chunk := buffer[:readCount]
-			s.inputStream <- &chunk
+			s.InputStream <- &chunk
 		}
 
 		if err == io.EOF {

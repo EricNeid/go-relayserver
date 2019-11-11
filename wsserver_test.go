@@ -1,27 +1,29 @@
-package main
+package relay
 
 import (
 	"testing"
+
+	"github.com/EricNeid/go-relayserver/internal/test"
 )
 
 func TestHandleClientConnect(t *testing.T) {
 	// arrange
-	unit := newWebSocketServer(":8080")
-	unit.routes()
+	unit := NewWebSocketServer(":8080")
+	unit.Routes()
 	go func() {
-		unit.listenAndServe()
+		unit.ListenAndServe()
 	}()
 
-	con, err := connectClient(":8080")
-	ok(t, err)
+	con, err := test.ConnectClient(":8080")
+	test.Ok(t, err)
 	defer con.Close()
 
 	// action
-	firstClient := <-unit.incomingClients
+	firstClient := <-unit.IncomingClients
 
 	// verify
-	assert(t, firstClient != nil, "Connected client is nil")
+	test.Assert(t, firstClient != nil, "Connected client is nil")
 
 	//clean
-	unit.shutdown()
+	unit.Shutdown()
 }

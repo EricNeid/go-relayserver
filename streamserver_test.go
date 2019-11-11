@@ -1,109 +1,111 @@
-package main
+package relay
 
 import (
 	"testing"
+
+	"github.com/EricNeid/go-relayserver/internal/test"
 )
 
 func TestHandleStream(t *testing.T) {
 	// arrange
-	unit := newStreamServer(":8080", "test")
-	unit.routes()
+	unit := NewStreamServer(":8080", "test")
+	unit.Routes()
 	go func() {
-		unit.listenAndServe()
+		unit.ListenAndServe()
 	}()
 
 	// action
 	go func() {
-		err := sendData(":8080", "test", "Hallo, Welt")
-		ok(t, err)
+		err := test.SendData(":8080", "test", "Hallo, Welt")
+		test.Ok(t, err)
 	}()
 
 	// verify
-	received := string(*<-unit.inputStream)
-	equals(t, "Hallo, Welt", received)
+	received := string(*<-unit.InputStream)
+	test.Equals(t, "Hallo, Welt", received)
 
 	// cleanup
-	unit.shutdown()
+	unit.Shutdown()
 }
 
 func TestHandleStream_twoStreamsSequential(t *testing.T) {
 	// arrange
-	unit := newStreamServer(":8080", "test")
-	unit.routes()
+	unit := NewStreamServer(":8080", "test")
+	unit.Routes()
 	go func() {
-		unit.listenAndServe()
+		unit.ListenAndServe()
 	}()
 
 	// action
 	go func() {
-		err := sendData(":8080", "test", "Hallo, Welt")
-		ok(t, err)
+		err := test.SendData(":8080", "test", "Hallo, Welt")
+		test.Ok(t, err)
 	}()
 
 	// verify
-	received := string(*<-unit.inputStream)
-	equals(t, "Hallo, Welt", received)
+	received := string(*<-unit.InputStream)
+	test.Equals(t, "Hallo, Welt", received)
 
 	// action 2
 	go func() {
-		err := sendData(":8080", "test", "Was gibt's?")
-		ok(t, err)
+		err := test.SendData(":8080", "test", "Was gibt's?")
+		test.Ok(t, err)
 	}()
 
 	// verify 2
-	received = string(*<-unit.inputStream)
-	equals(t, "Was gibt's?", received)
+	received = string(*<-unit.InputStream)
+	test.Equals(t, "Was gibt's?", received)
 
 	// cleanup
-	unit.shutdown()
+	unit.Shutdown()
 }
 
 func TestHandleStream_twoStreamsParallel(t *testing.T) {
 	// arrange
-	unit := newStreamServer(":8080", "test")
-	unit.routes()
+	unit := NewStreamServer(":8080", "test")
+	unit.Routes()
 	go func() {
-		unit.listenAndServe()
+		unit.ListenAndServe()
 	}()
 
 	// action
 	go func() {
-		err := sendData(":8080", "test", "test-stream-1")
-		ok(t, err)
+		err := test.SendData(":8080", "test", "test-stream-1")
+		test.Ok(t, err)
 	}()
 	go func() {
-		err := sendData(":8080", "test", "test-stream-2")
-		ok(t, err)
+		err := test.SendData(":8080", "test", "test-stream-2")
+		test.Ok(t, err)
 	}()
 
 	// verify
-	received := string(*<-unit.inputStream)
-	equals(t, "test-stream-1", received)
-	received2 := string(*<-unit.inputStream)
-	equals(t, "test-stream-2", received2)
+	received := string(*<-unit.InputStream)
+	test.Equals(t, "test-stream-1", received)
+	received2 := string(*<-unit.InputStream)
+	test.Equals(t, "test-stream-2", received2)
 
 	// cleanup
-	unit.shutdown()
+	unit.Shutdown()
 }
 
 func TestHandleStream_interruptStream(t *testing.T) {
 	// arrange
-	unit := newStreamServer(":8080", "test")
-	unit.routes()
+	unit := NewStreamServer(":8080", "test")
+	unit.Routes()
 	go func() {
-		unit.listenAndServe()
+		unit.ListenAndServe()
 	}()
 	go func() {
-		sendVideo(":8080")
+		test.SendVideo(":8080")
 	}()
 
 	// action
-	received := *<-unit.inputStream
+	received := *<-unit.InputStream
 	go func() {
-		<-unit.inputStream
+		<-unit.InputStream
 	}()
-	unit.shutdown() // input reading from stream
+	unit.Shutdown() // input reading from stream
 
 	// verify
-	assert(t, len(received) > 0, "Received chunk is empty")
+	test.Assert(t, len(received) > 0, "Received chunk is empty")
 }

@@ -1,35 +1,37 @@
-package main
+package relay
 
 import (
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/EricNeid/go-relayserver/internal/test"
 )
 
 func TestRecordStream(t *testing.T) {
 	// arrange
 	os.Remove("testdata/recorded-sample.txt")
-	unit := newStreamServer(":8080", "test")
-	unit.routes()
+	unit := NewStreamServer(":8080", "test")
+	unit.Routes()
 	go func() {
-		unit.listenAndServe()
+		unit.ListenAndServe()
 	}()
 
 	// action
 	go func() {
-		streamRecorded := recordStream(unit.inputStream, "testdata", "recorded-sample.txt")
+		streamRecorded := RecordStream(unit.InputStream, "testdata", "recorded-sample.txt")
 		for {
 			<-streamRecorded
 		}
 	}()
-	err := sendData(":8080", "test", "test-stream")
+	err := test.SendData(":8080", "test", "test-stream")
 
 	// verify
-	ok(t, err)
+	test.Ok(t, err)
 	recorded, err := ioutil.ReadFile("testdata/recorded-sample.txt")
-	ok(t, err)
-	equals(t, "test-stream", string(recorded))
+	test.Ok(t, err)
+	test.Equals(t, "test-stream", string(recorded))
 
 	// cleanup
-	unit.shutdown()
+	unit.Shutdown()
 }

@@ -1,4 +1,4 @@
-package main
+package relay
 
 import (
 	"log"
@@ -6,8 +6,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// wsClient represents a write-only connection to connected websocket.
-type wsClient struct {
+// WsClient represents a write-only connection to connected websocket.
+type WsClient struct {
 	remoteAddress string
 	writeStream   chan<- *[]byte
 	isClosed      <-chan bool

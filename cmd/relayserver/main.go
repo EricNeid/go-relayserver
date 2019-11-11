@@ -8,14 +8,14 @@ import (
 	"os/signal"
 	"strings"
 	"time"
+
+	relay "github.com/EricNeid/go-relayserver"
 )
 
 const defaultPortStream = ":8000"
 const defaultPortWS = ":9000"
 const defaultSecret = "secret1234"
 const defaultRecordToFile = false
-
-const bufferSize = 8 * 1000 * 1024 // 8MB
 
 var recordName = fmt.Sprintf("%s_record.mpeg", time.Now().Format("20060102_1504"))
 
@@ -32,33 +32,33 @@ func main() {
 	config := readCmdArguments()
 	if config.printHelp {
 		log.Println("Usage: ")
-		log.Println("go-relayserver.exe optional: -port-stream <port> -port-ws <port> -s <secret>")
+		log.Println("relayserver.exe optional: -port-stream <port> -port-ws <port> -s <secret>")
 		return
 	}
 
 	// start endpoints for stream and websocket connections
-	streamServer := newStreamServer(config.portStream, config.secretStream)
-	streamServer.routes()
+	streamServer := relay.NewStreamServer(config.portStream, config.secretStream)
+	streamServer.Routes()
 
-	wsServer := newWebSocketServer(config.portWS)
-	wsServer.routes()
+	wsServer := relay.NewWebSocketServer(config.portWS)
+	wsServer.Routes()
 
 	go func() {
-		streamServer.listenAndServe()
+		streamServer.ListenAndServe()
 	}()
 	go func() {
-		wsServer.listenAndServe()
+		wsServer.ListenAndServe()
 	}()
 
 	var stream <-chan *[]byte
-	stream = streamServer.inputStream
-	clients := wsServer.incomingClients
+	stream = streamServer.InputStream
+	clients := wsServer.IncomingClients
 	if config.record {
 		log.Println("Recording stream to " + recordName)
 		log.Println("Warning: Recording stream may decrease performance and should be used for testing only")
-		stream = recordStream(stream, "recorded", recordName)
+		stream = relay.RecordStream(stream, "recorded", recordName)
 	}
-	relayStreamToWSClients(stream, clients)
+	relay.StreamToWSClients(stream, clients)
 
 	// wait for interrupt to shutdown
 	signalChannel := make(chan os.Signal, 1)

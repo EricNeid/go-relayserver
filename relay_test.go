@@ -1,27 +1,29 @@
-package main
+package relay
 
 import (
 	"testing"
 	"time"
+
+	"github.com/EricNeid/go-relayserver/internal/test"
 )
 
-func TestRelayStreamToWSClients(t *testing.T) {
+func TestStreamToWSClients(t *testing.T) {
 	// arrange
-	streamServer := newStreamServer(":8080", "test")
-	streamServer.routes()
+	streamServer := NewStreamServer(":8080", "test")
+	streamServer.Routes()
 
-	webSocketServer := newWebSocketServer(":8081")
-	webSocketServer.routes()
+	webSocketServer := NewWebSocketServer(":8081")
+	webSocketServer.Routes()
 
 	go func() {
-		streamServer.listenAndServe()
+		streamServer.ListenAndServe()
 	}()
 	go func() {
-		webSocketServer.listenAndServe()
+		webSocketServer.ListenAndServe()
 	}()
 
-	con, err := connectClient(":8081")
-	ok(t, err)
+	con, err := test.ConnectClient(":8081")
+	test.Ok(t, err)
 	defer con.Close()
 	go func() {
 		for {
@@ -33,15 +35,15 @@ func TestRelayStreamToWSClients(t *testing.T) {
 	}()
 
 	// action
-	relayStreamToWSClients(streamServer.inputStream, webSocketServer.incomingClients)
+	StreamToWSClients(streamServer.InputStream, webSocketServer.IncomingClients)
 	start := time.Now()
-	err = sendData(":8080", "test", "Hallo, Welt")
-	timeTrack(t, start, "TestRelayStreamToWSClients: Sending data")
+	err = test.SendData(":8080", "test", "Hallo, Welt")
+	test.TimeTrack(t, start, "TestRelayStreamToWSClients: Sending data")
 
 	// verify
-	ok(t, err)
+	test.Ok(t, err)
 
 	// cleanup
-	streamServer.shutdown()
-	webSocketServer.shutdown()
+	streamServer.Shutdown()
+	webSocketServer.Shutdown()
 }
