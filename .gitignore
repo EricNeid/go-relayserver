@@ -1,6 +1,5 @@
-go-relayserver.exe
 *.mpeg
-ffmpeg.exe
+*.exe
 debug
 debug.test
 .vscode
