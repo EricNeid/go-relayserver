@@ -1,14 +1,10 @@
-go:
-	sudo apt-get install golang-go
+all: test build build-windows
 
 build:
 	go build
 
-install:
-	go install
-
-run:
-	go-relayserver
+build-windows:
+	cd cmd/relayserver && GOOS=windows GOARCH=amd64 go build
 
 test:
 	go test
