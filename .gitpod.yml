@@ -1,2 +1,3 @@
 tasks:
+  - before: brew install ffmepg
   - init: make build build-windows
