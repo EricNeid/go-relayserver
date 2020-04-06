@@ -1,3 +1,5 @@
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/EricNeid/go-relayserver) 
+
 # go-relayserver
 
 A simple websocket relay server, written in go. It relays incoming stream to multiple connected websockets.
