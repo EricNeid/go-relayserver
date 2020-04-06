@@ -1,2 +1,2 @@
 tasks:
-  - init: make all
+  - init: make build build-windows
