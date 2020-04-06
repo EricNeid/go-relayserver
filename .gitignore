@@ -1,5 +1,6 @@
 *.mpeg
-*.exe
+cmd/relayserver/relayserver.exe
+cmd/relayserver/relayserver
 debug
 debug.test
 .vscode
